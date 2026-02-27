@@ -76,6 +76,6 @@ if __name__ == '__main__':
     # Create and run app
     app = create_app()
     logger.info(f"Starting Voice Inventory Agent on {HOST}:{PORT}")
-    logger.info(f"API:      http://{HOST}:{PORT}/api")
+    logger.info(f"API: http://{HOST}:{PORT}/api")
     logger.info(f"Frontend: http://{HOST}:{PORT}")
     app.run(debug=DEBUG, host=HOST, port=PORT)

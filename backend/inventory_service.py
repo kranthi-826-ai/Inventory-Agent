@@ -23,7 +23,7 @@ class InventoryService:
             items = execute_query(query, fetch_all=True)
             logger.info(f"Retrieved {len(items)} items from inventory")
             return items
-        exceptexcept Exception as e:
+        except Exception as e:
             logger.error(f"Error getting all items: {e}")
             return []
    

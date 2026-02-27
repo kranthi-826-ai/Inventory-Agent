@@ -23,17 +23,15 @@ class InventoryService:
             items = execute_query(query, fetch_all=True)
             logger.info(f"Retrieved {len(items)} items from inventory")
             return items
-                    except Exception as e:
+        exceptexcept Exception as e:
             logger.error(f"Error getting all items: {e}")
             return []
    
     @staticmethod
     def get_item(item_name: str) -> Optional[Dict]:
-                except Exception as e:
-            logger.error(f"Error getting all items: {e}")
-            return []
         """Get a specific item by name"""
-        try:
+                try:
+        
             query = "SELECT * FROM inventory WHERE LOWER(name) = LOWER(?)"
             item = execute_query(query, (item_name,), fetch_one=True)
             return item

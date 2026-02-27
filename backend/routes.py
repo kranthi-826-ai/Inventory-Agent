@@ -307,3 +307,31 @@ def clear_inventory():
     except Exception as e:
         logging.error(f"Error clearing inventory: {str(e)}")
         return {'success': False, 'message': f'Error: {str(e)}'}
+
+@api_bp.route('/api/inventory/<int:item_id>', methods=['DELETE'])
+def delete_inventory_item(item_id):
+    """Delete a specific inventory item by ID"""
+    try:
+        InventoryService.delete_item_by_id(item_id)
+        return jsonify({'success': True, 'message': 'Item deleted successfully'})
+    except Exception as e:
+        logging.error(f"Error deleting item: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@api_bp.route('/api/inventory/batch-delete', methods=['POST'])
+def batch_delete_items():
+    """Delete multiple inventory items"""
+    try:
+        data = request.get_json()
+        item_ids = data.get('item_ids', [])
+        
+        if not item_ids:
+            return jsonify({'success': False, 'message': 'No items selected'})
+        
+        for item_id in item_ids:
+            InventoryService.delete_item_by_id(item_id)
+        
+        return jsonify({'success': True, 'message': f'{len(item_ids)} item(s) deleted successfully'})
+    except Exception as e:
+        logging.error(f"Error in batch delete: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}

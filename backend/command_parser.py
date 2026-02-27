@@ -1,12 +1,15 @@
 import re
 import logging
-from typing import Optional, Tuple, Dict
-from shared.constants import COMMAND_PATTERNS, ACTIONS
+from typing import Optional
+
+from shared.constants import ACTIONS
 from shared.models import ParsedCommand
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Stop words to ignore when extracting item names
+STOP_WORDS = {'and', 'also', 'the', 'a', 'an', 'of', 'in', 'to', 'for', 'with', 'please', 'can', 'you', 'i', 'want', 'need', 'successfully', 'under', 'forest', 'packets', 'packet'}
 
 class CommandParser:
     """Parse natural language commands into structured data"""
@@ -14,176 +17,178 @@ class CommandParser:
     @staticmethod
     def parse(text: str) -> Optional[ParsedCommand]:
         """
-        Parse a text command into action, item, and quantity
-        Returns ParsedCommand object or None if parsing fails
+        Parse a text command into action, item, and quantity.
+        Returns ParsedCommand object or None if parsing fails.
         """
         if not text or not text.strip():
-            logger.warning("Empty command received")
             return None
         
         text = text.strip().lower()
         logger.info(f"Parsing command: {text}")
         
-        # Try each action pattern
-        for action, pattern in COMMAND_PATTERNS.items():
-            match = re.match(pattern, text)
-            if match:
-                return CommandParser._create_parsed_command(action, match, text)
+        # Try structured patterns first
+        parsed = CommandParser._try_structured_parse(text)
+        if parsed:
+            return parsed
         
-        # If no pattern matches, try to extract using flexible parsing
+        # Fall back to flexible parsing
         return CommandParser._flexible_parse(text)
     
     @staticmethod
-    def _create_parsed_command(action: str, match: re.Match, raw_text: str) -> ParsedCommand:
-        """Create ParsedCommand from regex match"""
-        groups = match.groups()
+    def _try_structured_parse(text: str) -> Optional[ParsedCommand]:
+        """Try to parse using strict patterns"""
         
-        if action in ['add', 'remove']:
-            # Pattern: action quantity item
-            quantity = int(groups[0])
-            item = groups[1].strip()
+        # Pattern 1: "add 10 bags of rice" or "add 10 rice"
+        match = re.match(r'(?:add|put|insert)\s+(\d+)\s+(?:bags?|units?|pcs?|pieces?|kg|grams?)?\s*(?:of\s+)?([a-z\s]+?)(?:\s+and|\s+also|$)', text)
+        if match:
+            quantity = int(match.group(1))
+            item = CommandParser._clean_item_name(match.group(2))
             return ParsedCommand(
-                action=action,
+                action='add',
                 item=item,
                 quantity=quantity,
-                raw_text=raw_text
+                raw_text=text,
+                confidence=1.0
             )
         
-        elif action == 'update':
-            # Pattern: update item to quantity
-            item = groups[0].strip()
-            quantity = int(groups[1])
+        # Pattern 2: "remove 5 rice" or "remove 5 bags of rice"
+        match = re.match(r'(?:remove|delete|take)\s+(\d+)\s+(?:bags?|units?|pcs?)?\s*(?:of\s+)?([a-z\s]+?)(?:\s+and|\s+also|$)', text)
+        if match:
+            quantity = int(match.group(1))
+            item = CommandParser._clean_item_name(match.group(2))
             return ParsedCommand(
-                action=action,
+                action='remove',
                 item=item,
                 quantity=quantity,
-                raw_text=raw_text
+                raw_text=text,
+                confidence=1.0
             )
         
-        elif action == 'check':
-            # Pattern: check item
-            item = groups[0].strip()
+        # Pattern 3: "update rice to 20" or "set rice quantity to 20"
+        match = re.match(r'(?:update|change|set)\s+([a-z\s]+?)\s+(?:quantity\s+)?to\s+(\d+)', text)
+        if match:
+            item = CommandParser._clean_item_name(match.group(1))
+            quantity = int(match.group(2))
             return ParsedCommand(
-                action=action,
+                action='update',
+                item=item,
+                quantity=quantity,
+                raw_text=text,
+                confidence=1.0
+            )
+        
+        # Pattern 4: "check rice" or "how many rice"
+        match = re.match(r'(?:check|how\s+many|quantity\s+of)\s+([a-z\s]+)', text)
+        if match:
+            item = CommandParser._clean_item_name(match.group(1))
+            return ParsedCommand(
+                action='check',
                 item=item,
                 quantity=0,
-                raw_text=raw_text
+                raw_text=text,
+                confidence=1.0
             )
         
-        elif action == 'list':
-            # Pattern: list all inventory
+        # Pattern 5: "list all" or "show inventory"
+        if re.match(r'(?:list|show|get)\s+(?:all|inventory)', text):
             return ParsedCommand(
-                action=ACTIONS['LIST'],
+                action='list',
                 item='all',
                 quantity=0,
-                raw_text=raw_text
+                raw_text=text,
+                confidence=1.0
             )
         
         return None
     
     @staticmethod
+    def _clean_item_name(raw_item: str) -> str:
+        """Clean and normalize item name by removing stop words and extra spaces"""
+        words = raw_item.strip().split()
+        # Remove stop words and clean
+        cleaned = [w for w in words if w.lower() not in STOP_WORDS and w.strip()]
+        return ' '.join(cleaned).strip() if cleaned else raw_item.strip()
+    
+    @staticmethod
     def _flexible_parse(text: str) -> Optional[ParsedCommand]:
-        """Flexible parsing for commands that don't match exact patterns"""
+        """Fallback parser for less structured commands"""
         words = text.split()
         
-        # Look for action words
+        # Find action
         action_map = {
-            'add': ACTIONS['ADD'],
-            'put': ACTIONS['ADD'],
-            'insert': ACTIONS['ADD'],
-            'remove': ACTIONS['REMOVE'],
-            'delete': ACTIONS['REMOVE'],
-            'take': ACTIONS['REMOVE'],
-            'update': ACTIONS['UPDATE'],
-            'change': ACTIONS['UPDATE'],
-            'set': ACTIONS['UPDATE'],
-            'check': ACTIONS['CHECK'],
-            'how': ACTIONS['CHECK'],
-            'list': ACTIONS['LIST'],
-            'show': ACTIONS['LIST']
+            'add': 'add', 'put': 'add', 'insert': 'add',
+            'remove': 'remove', 'delete': 'remove', 'take': 'remove',
+            'update': 'update', 'change': 'update', 'set': 'update',
+            'check': 'check', 'how': 'check',
+            'list': 'list', 'show': 'list'
         }
         
-        # Find action
         action = None
-        for word in words:
+        action_idx = -1
+        for i, word in enumerate(words):
             if word in action_map:
                 action = action_map[word]
+                action_idx = i
                 break
         
         if not action:
-            logger.warning(f"No action found in command: {text}")
             return None
         
-        # Extract quantity (look for numbers)
+        # Extract quantity
         quantity = 0
-        for word in words:
+        quantity_idx = -1
+        for i, word in enumerate(words):
             if word.isdigit():
                 quantity = int(word)
+                quantity_idx = i
                 break
         
-        # Extract item (everything after action and number)
-        item_parts = []
-        skip_next = False
-        for i, word in enumerate(words):
-            if skip_next:
-                skip_next = False
-                continue
-            
-            # Skip action words
-            if word in action_map:
-                continue
-            
-            # Skip numbers (they're quantity)
-            if word.isdigit():
-                continue
-            
-            # Handle "how many" pattern
-            if word == 'how' and i+1 < len(words) and words[i+1] == 'many':
-                skip_next = True
-                continue
-            
-            # Handle "quantity of" pattern
-            if word == 'quantity' and i+1 < len(words) and words[i+1] == 'of':
-                skip_next = True
-                continue
-            
-            item_parts.append(word)
+        # Extract item name (words after action and quantity, before stop words)
+        item_words = []
+        start_idx = max(action_idx + 1, quantity_idx + 1)
         
-        item = ' '.join(item_parts).strip() if item_parts else 'unknown'
+        for i in range(start_idx, len(words)):
+            word = words[i]
+            # Stop at common stop words
+            if word in STOP_WORDS or word in ['and', 'also']:
+                break
+            # Skip quantity words
+            if word.isdigit() or word in ['bags', 'bag', 'units', 'unit', 'of']:
+                continue
+            item_words.append(word)
         
-        # For check actions, if no specific item, assume they want all
-        if action == ACTIONS['CHECK'] and (not item or item == 'unknown'):
-            action = ACTIONS['LIST']
-            item = 'all'
+        item = ' '.join(item_words).strip()
+        
+        if not item:
+            return None
         
         return ParsedCommand(
             action=action,
             item=item,
             quantity=quantity if quantity > 0 else 1,
             raw_text=text,
-            confidence=0.7  # Lower confidence for flexible parsing
+            confidence=0.7
         )
 
-# Convenience function
 def parse_command(text: str) -> Optional[ParsedCommand]:
     """Main function to parse commands"""
     return CommandParser.parse(text)
 
-# Test the parser
 if __name__ == "__main__":
     test_commands = [
-        "add 10 apples",
-        "remove 5 bananas",
-        "update oranges to 20",
-        "check inventory",
-        "how many laptops do we have",
+        "add 10 bags of rice",
+        "add 10 rice",
+        "add 5 water bottles",
+        "remove 2 rice",
+        "update rice to 20",
+        "check rice",
         "list all items",
-        "show me the inventory"
+        "add 100 water bottles and also add biscuit packets",
     ]
     
     for cmd in test_commands:
         result = parse_command(cmd)
         if result:
-            print(f"✓ {cmd:30} → {result}")
+            print(f"✓ {cmd:50} → Action: {result.action}, Item: '{result.item}', Qty: {result.quantity}")
         else:
-            print(f"✗ {cmd:30} → Failed to parse")
+            print(f"✗ {cmd:50} → Failed to parse")

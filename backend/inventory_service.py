@@ -251,10 +251,10 @@ class InventoryService:
         """Clear all items from inventory (DANGER: This deletes all data)"""
         try:
             with get_db_cursor() as cursor:
-            cursor.execute("DELETE FROM transaction_log")                cursor.execute("DELETE FROM transaction_log")
-                        cursor.execute("DELETE FROM inventory")
+                cursor.execute("DELETE FROM transaction_log")
+                cursor.execute("DELETE FROM inventory")
             logger.warning("All inventory items cleared")
-                    return True, "All inventory items have been cleared"except Exception as e:
+            return True, "All inventory items have been cleared"
             logger.error(f"Error clearing inventory: {e}")
             return False, f"Error clearing inventory: {str(e)}"
 

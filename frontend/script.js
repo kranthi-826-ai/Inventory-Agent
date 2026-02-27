@@ -454,3 +454,115 @@ function showToast(message, type = 'info') {
 }
 
 window.showToast = showToast;
+
+
+
+// Settings Modal Functions
+function openSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Theme Color Management
+function applyThemeColor() {
+    const root = document.documentElement;
+    const primaryColor = document.getElementById('primaryColor').value;
+    const secondaryColor = document.getElementById('secondaryColor').value;
+    const accentColor = document.getElementById('accentColor').value;
+    
+    root.style.setProperty('--primary', primaryColor);
+    root.style.setProperty('--secondary', secondaryColor);
+    root.style.setProperty('--accent', accentColor);
+    
+    // Save to localStorage
+    localStorage.setItem('theme-primary', primaryColor);
+    localStorage.setItem('theme-secondary', secondaryColor);
+    localStorage.setItem('theme-accent', accentColor);
+    
+    showToast('Theme colors applied successfully!', 'success');
+}
+
+function resetThemeToDefault() {
+    const root = document.documentElement;
+    root.style.setProperty('--primary', '#6366f1');
+    root.style.setProperty('--secondary', '#8b5cf6');
+    root.style.setProperty('--accent', '#ec4899');
+    
+    // Reset color pickers
+    const primaryPicker = document.getElementById('primaryColor');
+    const secondaryPicker = document.getElementById('secondaryColor');
+    const accentPicker = document.getElementById('accentColor');
+    
+    if (primaryPicker) primaryPicker.value = '#6366f1';
+    if (secondaryPicker) secondaryPicker.value = '#8b5cf6';
+    if (accentPicker) accentPicker.value = '#ec4899';
+    
+    // Clear localStorage
+    localStorage.removeItem('theme-primary');
+    localStorage.removeItem('theme-secondary');
+    localStorage.removeItem('theme-accent');
+    
+    showToast('Theme reset to default!', 'info');
+}
+
+function loadSavedTheme() {
+    const savedPrimary = localStorage.getItem('theme-primary');
+    const savedSecondary = localStorage.getItem('theme-secondary');
+    const savedAccent = localStorage.getItem('theme-accent');
+    
+    if (savedPrimary || savedSecondary || savedAccent) {
+        const root = document.documentElement;
+        if (savedPrimary) root.style.setProperty('--primary', savedPrimary);
+        if (savedSecondary) root.style.setProperty('--secondary', savedSecondary);
+        if (savedAccent) root.style.setProperty('--accent', savedAccent);
+    }
+}
+
+// Initialize settings event listeners
+function initializeSettings() {
+    // Settings modal close button
+    const closeSettingsBtn = document.getElementById('closeSettingsModal');
+    if (closeSettingsBtn) {
+        closeSettingsBtn.addEventListener('click', closeSettingsModal);
+    }
+    
+    // Close modal when clicking outside
+    const settingsModal = document.getElementById('settingsModal');
+    if (settingsModal) {
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                closeSettingsModal();
+            }
+        });
+    }
+                
+    // Apply theme button
+    const applyThemeBtn = document.getElementById('applyThemeBtn');
+    if (applyThemeBtn) {
+        applyThemeBtn.addEventListener('click', applyThemeColor);
+    }
+    
+    // Reset theme button
+    const resetThemeBtn = document.getElementById('resetThemeBtn');
+    if (resetThemeBtn) {
+        resetThemeBtn.addEventListener('click', resetThemeToDefault);
+    }
+    
+    // Load saved theme on page load
+    loadSavedTheme();
+}
+
+// Initialize settings when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    initializePage();
+    initializeSettings();
+});

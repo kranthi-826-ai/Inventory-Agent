@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Inventory Agent</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="gradient-bg">
+        <div class="floating-particle"></div>
+        <div class="floating-particle"></div>
+        <div class="floating-particle"></div>
+    </div>
+
+    <div class="container">
+        <!-- Navbar -->
+        <nav class="glass-nav">
+            <div class="logo">
+                <span class="logo-text">Voice<span class="gradient-text">Inventory</span></span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link active">Voice Input</a>
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="voice-container fade-in">
+            <div class="glass-card voice-card">
+                <h1 class="hero-title">Voice Inventory Assistant</h1>
+                <p class="hero-subtitle">Speak naturally to manage your inventory</p>
+
+                <!-- Microphone Section -->
+                <div class="mic-section">
+                    <button class="mic-button" id="micButton">
+                        <img src="../assets/mic-icon.png" alt="Microphone" class="mic-icon">
+                        <div class="mic-pulse"></div>
+                    </button>
+                    <div class="waveform-container" id="waveform">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Recognized Text Panel -->
+                <div class="text-panel glass-card">
+                    <div class="panel-header">
+                        <span class="panel-title">Recognized Speech</span>
+                        <span class="status-badge" id="statusBadge">Ready</span>
+                    </div>
+                    <div class="recognized-text" id="recognizedText">
+                        Click the microphone and start speaking...
+                    </div>
+                </div>
+
+                <!-- Command Preview -->
+                <div class="command-preview glass-card" id="commandPreview">
+                    <div class="preview-header">
+                        <span class="preview-title">Command Preview</span>
+                    </div>
+                    <div class="preview-content" id="previewContent">
+                        <span class="placeholder-text">No command detected</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn-primary glow-button" id="openDashboardBtn">
+                        Open Dashboard
+                        <span class="btn-ripple"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

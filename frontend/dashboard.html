@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Voice Inventory</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="gradient-bg">
+        <div class="floating-particle"></div>
+        <div class="floating-particle"></div>
+        <div class="floating-particle"></div>
+    </div>
+
+    <div class="container">
+        <!-- Navbar -->
+        <nav class="glass-nav">
+            <div class="logo">
+                <span class="logo-text">Voice<span class="gradient-text">Inventory</span></span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Voice Input</a>
+                <a href="dashboard.html" class="nav-link active">Dashboard</a>
+            </div>
+        </nav>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-container fade-in">
+            <!-- Sidebar -->
+            <div class="sidebar glass-card">
+                <div class="sidebar-header">
+                    <img src="../assets/mic-icon.png" alt="Logo" class="sidebar-logo">
+                    <h3>Menu</h3>
+                </div>
+                <ul class="sidebar-menu">
+                    <li class="menu-item active">
+                        <span class="menu-icon">📊</span>
+                        <span>Overview</span>
+                    </li>
+                    <li class="menu-item">
+                        <span class="menu-icon">📦</span>
+                        <span>Inventory</span>
+                    </li>
+                    <li class="menu-item">
+                        <span class="menu-icon">📈</span>
+                        <span>Reports</span>
+                    </li>
+                    <li class="menu-item">
+                        <span class="menu-icon">⚙️</span>
+                        <span>Settings</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Main Dashboard -->
+            <div class="dashboard-main">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card glass-card glow-border">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Items</span>
+                            <span class="stat-value" id="totalItems">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card glow-border">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Low Stock</span>
+                            <span class="stat-value" id="lowStock">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card glow-border">
+                        <div class="stat-icon">🔄</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Recent Updates</span>
+                            <span class="stat-value" id="recentUpdates">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Table Section -->
+                <div class="table-section glass-card">
+                    <div class="table-header">
+                        <h2>Inventory Items</h2>
+                        <div class="table-actions">
+                            <input type="text" placeholder="Search items..." class="search-input" id="searchInput">
+                            <button class="btn-primary glow-button" id="addItemBtn">
+                                Add Item
+                                <span class="btn-ripple"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Inventory Table -->
+                    <div class="table-container">
+                        <table class="inventory-table" id="inventoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Quantity</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-container glass-card">
+            <div class="modal-header">
+                <h3>Add New Item</h3>
+                <button class="close-modal" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addItemForm">
+                    <div class="form-group">
+                        <label for="itemName">Item Name</label>
+                        <input type="text" id="itemName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemQuantity">Quantity</label>
+                        <input type="number" id="itemQuantity" class="form-input" min="0" required>
+                    </div>
+                    <button type="submit" class="btn-primary glow-button full-width">
+                        Add to Inventory
+                        <span class="btn-ripple"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

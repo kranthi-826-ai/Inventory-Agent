@@ -819,3 +819,29 @@ body {
         padding: 0 1rem;
     }
 }
+/* Language Selector */
+.language-selector {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.language-dropdown {
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    font-size: 1rem;
+    cursor: pointer;
+    outline: none;
+    min-width: 200px;
+}
+
+.language-dropdown option {
+    background: var(--dark);
+    color: var(--text-primary);
+}
+
+.language-dropdown:hover {
+    border-color: var(--primary);
+}

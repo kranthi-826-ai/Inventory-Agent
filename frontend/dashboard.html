@@ -18,7 +18,16 @@
         <!-- Navbar -->
         <nav class="glass-nav">
             <div class="logo">
-                <span class="logo-text">Voice<span class="gradient-text">Inventory</span></span>
+             <svg class="navbar-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="url(#gradient)"/>
+                    <path d="M35 50 L45 60 L65 40" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#6366f1"/>
+                            <stop offset="100%" style="stop-color:#8b5cf6"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link">Voice Input</a>
@@ -39,15 +48,10 @@
                         <span class="menu-icon">📊</span>
                         <span>Overview</span>
                     </li>
-                    <li class="menu-item">
-                        <span class="menu-icon">📦</span>
-                        <span>Inventory</span>
+         i>
+                              <span>Reports</span>
                     </li>
-                    <li class="menu-item">
-                        <span class="menu-icon">📈</span>
-                        <span>Reports</span>
-                    </li>
-                    <li class="menu-item">
+                    <li class="menu-item" onclick="openSettingsModal()">
                         <span class="menu-icon">⚙️</span>
                         <span>Settings</span>
                     </li>
@@ -151,4 +155,43 @@
     <script src="api.js"></script>
     <script src="script.js"></script>
 </body>
+    
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-container glass-card">
+            <div class="modal-header">
+                <h3>Settings</h3>
+                <button class="close-modal" id="closeSettingsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Theme Color</label>
+                    <div class="color-picker">
+                        <input type="color" id="primaryColor" value="#6366f1" class="color-input">
+                        <input type="color" id="secondaryColor" value="#8b5cf6" class="color-input">
+                        <input type="color" id="accentColor" value="#ec4899" class="color-input">
+                    </div>
+                    <button class="btn-primary glow-button" id="applyThemeBtn" style="margin-top: 1rem;">Apply Theme</button>
+                    <button class="btn-secondary glow-button" id="resetThemeBtn" style="margin-top: 0.5rem;">Reset to Default</button>
+                </div>
+                <div class="form-group">
+                    <label>Notifications</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notificationsToggle" checked>
+                        <span class="toggle-slider"></span>
+                        <span>Enable notifications</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Voice Feedback</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="voiceFeedbackToggle" checked>
+                        <span class="toggle-slider"></span>
+                        <span>Enable voice feedback</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </html>

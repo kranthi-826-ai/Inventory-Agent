@@ -18,10 +18,12 @@ class InventoryService:
 
     @staticmethod
     def get_all_items() -> List[Dict]:
-        """Get all inventory items"""
+        """Get all inventory items - most recently modified first"""
         try:
-            query = "SELECT * FROM inventory ORDER BY id DESC"
+            query = "SELECT * FROM inventory ORDER BY updated_at DESC, id DESC"
             items = execute_query(query, fetch_all=True)
+            if items is None:
+                items = []
             logger.info(f"Retrieved {len(items)} items from inventory")
             return items
         except Exception as e:
@@ -47,14 +49,15 @@ class InventoryService:
         """
         try:
             existing = InventoryService.get_item(item_name)
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             with get_db_cursor() as cursor:
                 if existing:
                     new_quantity = existing['quantity'] + quantity
                     cursor.execute("""
                         UPDATE inventory
-                        SET quantity = ?
+                        SET quantity = ?, updated_at = ?
                         WHERE id = ?
-                    """, (new_quantity, existing['id']))
+                    """, (new_quantity, now, existing['id']))
                     cursor.execute("""
                         INSERT INTO transaction_log
                         (action, item_id, item_name, quantity_change, previous_quantity, new_quantity)
@@ -65,9 +68,9 @@ class InventoryService:
                     logger.info(f"Added {quantity} to existing item: {item_name}")
                 else:
                     cursor.execute("""
-                        INSERT INTO inventory (name, quantity)
-                        VALUES (?, ?)
-                    """, (item_name, quantity))
+                        INSERT INTO inventory (name, quantity, updated_at)
+                        VALUES (?, ?, ?)
+                    """, (item_name, quantity, now))
                     item_id = cursor.lastrowid
                     cursor.execute("""
                         INSERT INTO transaction_log
@@ -99,12 +102,13 @@ class InventoryService:
                 logger.warning(f"Insufficient stock for {item_name}")
                 return False, message, None
             new_quantity = existing['quantity'] - quantity
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             with get_db_cursor() as cursor:
                 cursor.execute("""
                     UPDATE inventory
-                    SET quantity = ?
+                    SET quantity = ?, updated_at = ?
                     WHERE id = ?
-                """, (new_quantity, existing['id']))
+                """, (new_quantity, now, existing['id']))
                 cursor.execute("""
                     INSERT INTO transaction_log
                     (action, item_id, item_name, quantity_change, previous_quantity, new_quantity)
@@ -131,12 +135,13 @@ class InventoryService:
                 return False, message, None
             if new_quantity < 0:
                 return False, "Quantity cannot be negative", None
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             with get_db_cursor() as cursor:
                 cursor.execute("""
                     UPDATE inventory
-                    SET quantity = ?
+                    SET quantity = ?, updated_at = ?
                     WHERE id = ?
-                """, (new_quantity, existing['id']))
+                """, (new_quantity, now, existing['id']))
                 cursor.execute("""
                     INSERT INTO transaction_log
                     (action, item_id, item_name, quantity_change, previous_quantity, new_quantity)
@@ -217,7 +222,7 @@ class InventoryService:
             query = """
                 SELECT * FROM inventory
                 WHERE LOWER(name) LIKE LOWER(?)
-                ORDER BY name
+                ORDER BY updated_at DESC, name
             """
             items = execute_query(query, (f'%{search_term}%',), fetch_all=True)
             logger.info(f"Found {len(items)} items matching '{search_term}'")

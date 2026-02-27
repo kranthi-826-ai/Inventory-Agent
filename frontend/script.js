@@ -61,6 +61,32 @@ function initializePage() {
     if (searchInput) {
         searchInput.addEventListener('input', handleSearch);
     }
+
+        // Clear All button
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to clear all inventory items? This action cannot be undone.')) {
+                try {
+                    const response = await fetch('/api/clear', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showToast(data.message, 'info');
+                        fetchInventory();
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                } catch (error) {
+                    showToast('Error clearing inventory', 'error');
+                }
+            }
+        });
+    }
     if (document.getElementById('inventoryTable')) {
         fetchInventory();
     }

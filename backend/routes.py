@@ -298,3 +298,12 @@ def execute_inventory_action(parsed: ParsedCommand) -> Dict[str, Any]:
         success = False
         data = None
     return {'success': success, 'message': message, 'data': data}
+
+@app.route('/api/clear', methods=['POST'])
+def clear_inventory():
+    try:
+        InventoryService.clear_all_inventory()
+        return {'success': True, 'message': 'All inventory items cleared successfully'}
+    except Exception as e:
+        logging.error(f"Error clearing inventory: {str(e)}")
+        return {'success': False, 'message': f'Error: {str(e)}'}

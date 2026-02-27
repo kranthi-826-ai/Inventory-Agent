@@ -259,6 +259,34 @@ class InventoryService:
             logger.error(f"Error clearing inventory: {e}")
             return False, f"Error clearing inventory: {str(e)}"
 
+    @staticmethod
+    def delete_item_by_id(item_id: int) -> None:
+        """Delete a specific inventory item by ID"""
+        try:
+            with get_db_cursor() as cursor:
+                # Get item details before deleting
+                cursor.execute("SELECT item_name, quantity FROM inventory WHERE id = ?", (item_id,))
+                item = cursor.fetchone()
+                
+                if not item:
+                    raise Exception("Item not found")
+                
+                item_name, quantity = item['item_name'], item['quantity']
+                
+                # Delete from inventory
+                cursor.execute("DELETE FROM inventory WHERE id = ?", (item_id,))
+                
+                # Log the deletion
+                cursor.execute("""
+                    INSERT INTO transaction_log (action, item_name, quantity, timestamp)
+                    VALUES (?, ?, ?, ?)
+                """, ('delete', item_name, quantity, datetime.now().isoformat()))
+                
+                logger.info(f"Deleted item: {item_name} (ID: {item_id})")
+        except Exception as e:
+            logger.error(f"Error deleting item by ID: {e}")
+            raise Exception(f"Failed to delete item: {str(e)}")
+
 
 # Convenience functions
 def get_inventory():

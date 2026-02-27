@@ -1,6 +1,3 @@
-// API Base URL - matches backend
-const API_BASE_URL = 'http://localhost:5000/api';
-
 // Speech Recognition Setup - with fallback
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
@@ -73,13 +70,13 @@ function initializePage() {
         searchInput.addEventListener('input', handleSearch);
     }
 
-    // Clear All button
+    // Clear All button - uses relative URL since Flask serves both frontend & backend on port 5000
     const clearAllBtn = document.getElementById('clearAllBtn');
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', async () => {
             if (confirm('Are you sure you want to clear all inventory items? This action cannot be undone.')) {
                 try {
-                    const response = await fetch(`${API_BASE_URL}/clear`, {
+                    const response = await fetch('/api/clear', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' }
                     });
@@ -223,7 +220,7 @@ function parseCommand(text) {
         .then(response => {
             if (response && response.data) {
                 const parsed = response.data.parsed_command;
-                previewContent.innerHTML = `<p><strong>Action:</strong> ${parsed.action} <strong>Item:</strong> ${parsed.item} <strong>Quantity:</strong> ${parsed.quantity}</p>`;
+                previewContent.innerHTML = `<p><strong>Action:</strong> ${parsed.action} &nbsp; <strong>Item:</strong> ${parsed.item} &nbsp; <strong>Quantity:</strong> ${parsed.quantity}</p>`;
                 showToast(response.message, 'success');
                 if (window.location.pathname.includes('dashboard')) {
                     fetchInventory();
@@ -237,7 +234,7 @@ function parseCommand(text) {
 
 async function sendVoiceCommand(command) {
     try {
-        const response = await fetch(`${API_BASE_URL}/voice-command`, {
+        const response = await fetch('/api/voice-command', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(command)
@@ -258,7 +255,7 @@ async function fetchInventory() {
     if (!tableBody) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/inventory`);
+        const response = await fetch('/api/inventory');
         const result = await response.json();
         if (result.status === 'success') {
             renderInventoryTable(result.data);
@@ -274,7 +271,7 @@ function renderInventoryTable(items) {
     const tableBody = document.getElementById('tableBody');
     if (!tableBody) return;
 
-    tableBody.innerHTML = items.map((item, idx) => `
+    tableBody.innerHTML = items.map((item) => `
         <tr data-id="${item.id}">
             <td>${item.name}</td>
             <td>${item.quantity}</td>
@@ -335,7 +332,7 @@ window.updateItemQuantity = async function(id, action) {
         let newQty = action === 'increase' ? currentQty + 1 : currentQty - 1;
         if (newQty < 0) newQty = 0;
 
-        const response = await fetch(`${API_BASE_URL}/inventory/update`, {
+        const response = await fetch('/api/inventory/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ item: itemName, quantity: newQty })
@@ -357,7 +354,7 @@ async function handleAddItem(e) {
     const quantity = parseInt(document.getElementById('itemQuantity').value);
 
     try {
-        const response = await fetch(`${API_BASE_URL}/inventory/add`, {
+        const response = await fetch('/api/inventory/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ item: itemName, quantity: quantity })

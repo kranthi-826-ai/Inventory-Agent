@@ -1,7 +1,7 @@
 # Action types supported by the system
 ACTIONS = {
     'ADD': 'add',
-    'REMOVE': 'remove', 
+    'REMOVE': 'remove',
     'UPDATE': 'update',
     'CHECK': 'check',
     'LIST': 'list'
@@ -28,11 +28,11 @@ MESSAGES = {
     'VOICE_PROCESSED': 'Voice command processed successfully'
 }
 
-# Command regex patterns
+# Command regex patterns - FIXED: single backslashes for proper regex
 COMMAND_PATTERNS = {
-    'add': r'(?i)(?:add|put|insert)\s+(\d+)\s+(.+)',
-    'remove': r'(?i)(?:remove|delete|take)\s+(\d+)\s+(.+)',
-    'update': r'(?i)(?:update|change|set)\s+(.+)\s+to\s+(\d+)',
-    'check': r'(?i)(?:check|how many|quantity of)\s+(.+)',
-    'list': r'(?i)(?:list|show|get)\s+(?:all|inventory)'
+    'add':    r'(?i)(?:add|put|insert)\s+(\d+)\s+(?:bags?|units?|pcs?|pieces?|kg|grams?)?\s*(.+)',
+    'remove': r'(?i)(?:remove|delete|take)\s+(\d+)\s+(?:bags?|units?|pcs?|pieces?|kg|grams?)?\s*(.+)',
+    'update': r'(?i)(?:update|change|set)\s+(.+?)\s+(?:to|quantity to|to quantity)\s+(\d+)',
+    'check':  r'(?i)(?:check|how many|quantity of)\s+(.+)',
+    'list':   r'(?i)(?:list|show|get)\s+(?:all|inventory)'
 }

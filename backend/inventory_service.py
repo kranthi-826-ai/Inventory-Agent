@@ -19,12 +19,10 @@ class InventoryService:
     def get_all_items() -> List[Dict]:
         """Get all inventory items"""
         try:
-            query = "SELECT * FROM inventory ORDER BY name"
+            query = "SELECT * FROM inventory ORDER BY id DESC"
             items = execute_query(query, fetch_all=True)
             logger.info(f"Retrieved {len(items)} items from inventory")
             return items
-        except Exception as e:
-            logger.error(f"Error getting all items: {e}")
             return []
     
     @staticmethod

@@ -67,7 +67,6 @@ def handle_voice_command():
 
         # Execute based on action
         result = execute_inventory_action(parsed)
-
         response_data = {
             'recognized_text': command_text,
             'parsed_command': {
@@ -105,11 +104,13 @@ def get_inventory():
                 item['status'] = 'low-stock'
             else:
                 item['status'] = 'in-stock'
+
         return jsonify(ApiResponse(
             status=STATUS['SUCCESS'],
             message=f"Retrieved {len(items)} items",
             data=items
         ).to_dict()), 200
+
     except Exception as e:
         logger.error(f"Error getting inventory: {e}")
         return jsonify(ApiResponse(
@@ -128,16 +129,20 @@ def add_inventory():
                 status=STATUS['ERROR'],
                 message="Missing item or quantity"
             ).to_dict()), 400
+
         item_name = str(data['item']).strip()
         quantity = int(data['quantity'])
+
         if quantity <= 0:
             return jsonify(ApiResponse(
                 status=STATUS['ERROR'],
                 message="Quantity must be positive"
             ).to_dict()), 400
+
         success, message, item = InventoryService.add_item(item_name, quantity)
         status_code = STATUS['SUCCESS'] if success else STATUS['ERROR']
         return jsonify(ApiResponse(status=status_code, message=message, data=item).to_dict()), 200
+
     except ValueError:
         return jsonify(ApiResponse(status=STATUS['ERROR'], message="Invalid quantity format").to_dict()), 400
     except Exception as e:
@@ -155,16 +160,20 @@ def remove_inventory():
                 status=STATUS['ERROR'],
                 message="Missing item or quantity"
             ).to_dict()), 400
+
         item_name = str(data['item']).strip()
         quantity = int(data['quantity'])
+
         if quantity <= 0:
             return jsonify(ApiResponse(
                 status=STATUS['ERROR'],
                 message="Quantity must be positive"
             ).to_dict()), 400
+
         success, message, item = InventoryService.remove_item(item_name, quantity)
         status_code = STATUS['SUCCESS'] if success else STATUS['ERROR']
         return jsonify(ApiResponse(status=status_code, message=message, data=item).to_dict()), 200
+
     except ValueError:
         return jsonify(ApiResponse(status=STATUS['ERROR'], message="Invalid quantity format").to_dict()), 400
     except Exception as e:
@@ -182,16 +191,20 @@ def update_inventory():
                 status=STATUS['ERROR'],
                 message="Missing item or quantity"
             ).to_dict()), 400
+
         item_name = str(data['item']).strip()
         quantity = int(data['quantity'])
+
         if quantity < 0:
             return jsonify(ApiResponse(
                 status=STATUS['ERROR'],
                 message="Quantity cannot be negative"
             ).to_dict()), 400
+
         success, message, item = InventoryService.update_item(item_name, quantity)
         status_code = STATUS['SUCCESS'] if success else STATUS['ERROR']
         return jsonify(ApiResponse(status=status_code, message=message, data=item).to_dict()), 200
+
     except ValueError:
         return jsonify(ApiResponse(status=STATUS['ERROR'], message="Invalid quantity format").to_dict()), 400
     except Exception as e:
@@ -209,12 +222,14 @@ def search_inventory():
                 status=STATUS['ERROR'],
                 message="Search term required"
             ).to_dict()), 400
+
         items = InventoryService.search_items(search_term)
         return jsonify(ApiResponse(
             status=STATUS['SUCCESS'],
             message=f"Found {len(items)} items",
             data=items
         ).to_dict()), 200
+
     except Exception as e:
         logger.error(f"Error searching inventory: {e}")
         return jsonify(ApiResponse(status=STATUS['ERROR'], message=MESSAGES['DB_ERROR']).to_dict()), 500
@@ -231,6 +246,7 @@ def get_low_stock():
             message=f"Found {len(items)} low stock items",
             data=items
         ).to_dict()), 200
+
     except Exception as e:
         logger.error(f"Error getting low stock: {e}")
         return jsonify(ApiResponse(status=STATUS['ERROR'], message=MESSAGES['DB_ERROR']).to_dict()), 500
@@ -246,6 +262,7 @@ def get_stats():
             message="Statistics retrieved",
             data=stats.to_dict()
         ).to_dict()), 200
+
     except Exception as e:
         logger.error(f"Error getting stats: {e}")
         return jsonify(ApiResponse(status=STATUS['ERROR'], message=MESSAGES['DB_ERROR']).to_dict()), 500
@@ -262,6 +279,7 @@ def get_transactions():
             message=f"Retrieved {len(logs)} transactions",
             data=logs
         ).to_dict()), 200
+
     except Exception as e:
         logger.error(f"Error getting transactions: {e}")
         return jsonify(ApiResponse(status=STATUS['ERROR'], message=MESSAGES['DB_ERROR']).to_dict()), 500
@@ -271,6 +289,44 @@ def get_transactions():
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'message': 'Voice Inventory Agent API is running'}), 200
+
+
+@api_bp.route('/clear', methods=['POST'])
+def clear_inventory():
+    """Clear all inventory items"""
+    try:
+        success, message = InventoryService.clear_all_inventory()
+        return jsonify({'success': success, 'message': message})
+    except Exception as e:
+        logging.error(f"Error clearing inventory: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+
+@api_bp.route('/inventory/<int:item_id>', methods=['DELETE'])
+def delete_inventory_item(item_id):
+    """Delete a specific inventory item by ID"""
+    try:
+        InventoryService.delete_item_by_id(item_id)
+        return jsonify({'success': True, 'message': 'Item deleted successfully'})
+    except Exception as e:
+        logging.error(f"Error deleting item: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+
+@api_bp.route('/inventory/batch-delete', methods=['POST'])
+def batch_delete_items():
+    """Delete multiple inventory items"""
+    try:
+        data = request.get_json()
+        item_ids = data.get('item_ids', [])
+        if not item_ids:
+            return jsonify({'success': False, 'message': 'No items selected'})
+        for item_id in item_ids:
+            InventoryService.delete_item_by_id(item_id)
+        return jsonify({'success': True, 'message': f'{len(item_ids)} item(s) deleted successfully'})
+    except Exception as e:
+        logging.error(f"Error in batch delete: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
 
 def execute_inventory_action(parsed: ParsedCommand) -> Dict[str, Any]:
@@ -297,41 +353,5 @@ def execute_inventory_action(parsed: ParsedCommand) -> Dict[str, Any]:
         message = MESSAGES['INVALID_ACTION'].format(action=parsed.action)
         success = False
         data = None
+
     return {'success': success, 'message': message, 'data': data}
-
-@api_bp.route('/api/clear', methods=['POST'])
-def clear_inventory():
-    try:
-        InventoryService.clear_all_inventory()
-        return {'success': True, 'message': 'All inventory items cleared successfully'}
-    except Exception as e:
-        logging.error(f"Error clearing inventory: {str(e)}")
-        return {'success': False, 'message': f'Error: {str(e)}'}
-
-@api_bp.route('/api/inventory/<int:item_id>', methods=['DELETE'])
-def delete_inventory_item(item_id):
-    """Delete a specific inventory item by ID"""
-    try:
-        InventoryService.delete_item_by_id(item_id)
-        return jsonify({'success': True, 'message': 'Item deleted successfully'})
-    except Exception as e:
-        logging.error(f"Error deleting item: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
-
-@api_bp.route('/api/inventory/batch-delete', methods=['POST'])
-def batch_delete_items():
-    """Delete multiple inventory items"""
-    try:
-        data = request.get_json()
-        item_ids = data.get('item_ids', [])
-        
-        if not item_ids:
-            return jsonify({'success': False, 'message': 'No items selected'})
-        
-        for item_id in item_ids:
-            InventoryService.delete_item_by_id(item_id)
-        
-        return jsonify({'success': True, 'message': f'{len(item_ids)} item(s) deleted successfully'})
-    except Exception as e:
-        logging.error(f"Error in batch delete: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'}

@@ -255,6 +255,7 @@ class InventoryService:
                 cursor.execute("DELETE FROM inventory")
             logger.warning("All inventory items cleared")
             return True, "All inventory items have been cleared"
+        except Exception as e:
             logger.error(f"Error clearing inventory: {e}")
             return False, f"Error clearing inventory: {str(e)}"
 
@@ -263,24 +264,14 @@ class InventoryService:
         """Delete a specific inventory item by ID"""
         try:
             with get_db_cursor() as cursor:
-                # Get item details before deleting
-                cursor.execute("SELECT item_name, quantity FROM inventory WHERE id = ?", (item_id,))
+                cursor.execute("SELECT name, quantity FROM inventory WHERE id = ?", (item_id,))
                 item = cursor.fetchone()
-                
                 if not item:
                     raise Exception("Item not found")
-                
-                item_name, quantity = item['item_name'], item['quantity']
-                
-                # Delete from inventory
+                item_name = item['name']
+                quantity = item['quantity']
+                cursor.execute("DELETE FROM transaction_log WHERE item_id = ?", (item_id,))
                 cursor.execute("DELETE FROM inventory WHERE id = ?", (item_id,))
-                
-                # Log the deletion
-                cursor.execute("""
-                    INSERT INTO transaction_log (action, item_name, quantity, timestamp)
-                    VALUES (?, ?, ?, ?)
-                """, ('delete', item_name, quantity, datetime.now().isoformat()))
-                
                 logger.info(f"Deleted item: {item_name} (ID: {item_id})")
         except Exception as e:
             logger.error(f"Error deleting item by ID: {e}")
@@ -291,11 +282,14 @@ class InventoryService:
 def get_inventory():
     return InventoryService.get_all_items()
 
+
 def add_inventory_item(item, quantity):
     return InventoryService.add_item(item, quantity)
 
+
 def remove_inventory_item(item, quantity):
     return InventoryService.remove_item(item, quantity)
+
 
 def update_inventory_item(item, quantity):
     return InventoryService.update_item(item, quantity)

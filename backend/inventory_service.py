@@ -246,6 +246,19 @@ class InventoryService:
             logger.error(f"Error getting transaction logs: {e}")
             return []
 
+    @staticmethod
+    def clear_all_inventory() -> Tuple[bool, str]:
+        """Clear all items from inventory (DANGER: This deletes all data)"""
+        try:
+            with get_db_cursor() as cursor:
+                cursor.execute("DELETE FROM inventory")
+                cursor.execute("DELETE FROM transaction_log")
+                logger.warning("All inventory items cleared")
+            return True, "All inventory items have been cleared"
+        except Exception as e:
+            logger.error(f"Error clearing inventory: {e}")
+            return False, f"Error clearing inventory: {str(e)}"
+
 
 # Convenience functions
 def get_inventory():

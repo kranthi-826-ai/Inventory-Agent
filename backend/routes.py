@@ -299,7 +299,7 @@ def execute_inventory_action(parsed: ParsedCommand) -> Dict[str, Any]:
         data = None
     return {'success': success, 'message': message, 'data': data}
 
-@app.route('/api/clear', methods=['POST'])
+@api_bp.route('/api/clear', methods=['POST'])
 def clear_inventory():
     try:
         InventoryService.clear_all_inventory()

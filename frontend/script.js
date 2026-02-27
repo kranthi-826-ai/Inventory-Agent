@@ -78,9 +78,13 @@ function initializePage() {
                 try {
                     const response = await fetch('/api/clear', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
                     });
+
                     const data = await response.json();
+
                     if (data.success) {
                         showToast(data.message, 'info');
                         fetchInventory();
@@ -138,7 +142,17 @@ function setupSpeechRecognition() {
 
     recognition.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
-        showToast(`Error: ${event.error}`, 'error');
+        
+        // Better error handling for different error types
+        if (event.error === 'network') {
+            showToast('Check your internet connection. Speech recognition requires network access.', 'error');
+        } else if (event.error === 'not-allowed') {
+            showToast('Microphone permission denied. Please allow microphone access.', 'error');
+        } else if (event.error === 'no-speech') {
+            showToast('No speech detected. Please try again.', 'warning');
+        } else {
+            showToast(`Error: ${event.error}`, 'error');
+        }
         stopListening();
     };
 
@@ -162,6 +176,7 @@ function toggleListening() {
         showToast('Speech recognition not supported in your browser', 'error');
         return;
     }
+
     if (isListening) {
         stopListening();
     } else {
@@ -171,6 +186,7 @@ function toggleListening() {
 
 function startListening() {
     if (!recognitionSupported) return;
+
     try {
         finalTranscript = '';
         document.getElementById('recognizedText').textContent = 'Listening...';
@@ -218,17 +234,23 @@ function parseCommand(text) {
 
     sendVoiceCommand({ text: text })
         .then(response => {
-            if (response && response.data) {
+            // Fixed: Check response.status === 'success' instead of response.data
+            if (response && response.status === 'success' && response.data) {
                 const parsed = response.data.parsed_command;
-                previewContent.innerHTML = `<p><strong>Action:</strong> ${parsed.action} &nbsp; <strong>Item:</strong> ${parsed.item} &nbsp; <strong>Quantity:</strong> ${parsed.quantity}</p>`;
+                previewContent.innerHTML = `<p><strong>Action:</strong> ${parsed.action} | <strong>Item:</strong> ${parsed.item} | <strong>Quantity:</strong> ${parsed.quantity}</p>`;
                 showToast(response.message, 'success');
+
                 if (window.location.pathname.includes('dashboard')) {
                     fetchInventory();
                 }
+            } else {
+                previewContent.innerHTML = `<p>Error: ${response.message || 'Failed to parse command'}</p>`;
+                showToast(response.message || 'Failed to parse command', 'error');
             }
         })
         .catch(error => {
             previewContent.innerHTML = `<p>Error parsing command: ${error.message}</p>`;
+            showToast('Error connecting to server', 'error');
         });
 }
 
@@ -236,12 +258,16 @@ async function sendVoiceCommand(command) {
     try {
         const response = await fetch('/api/voice-command', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(command)
         });
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         return await response.json();
     } catch (error) {
         console.error('Error sending voice command:', error);
@@ -257,6 +283,7 @@ async function fetchInventory() {
     try {
         const response = await fetch('/api/inventory');
         const result = await response.json();
+
         if (result.status === 'success') {
             renderInventoryTable(result.data);
             updateStats(result.data);
@@ -276,9 +303,9 @@ function renderInventoryTable(items) {
             <td>${item.name}</td>
             <td>${item.quantity}</td>
             <td><span class="status-badge ${getStatusClass(item.quantity)}">${getStatusText(item.quantity)}</span></td>
-            <td>
-                <button class="btn-icon" onclick="updateItemQuantity(${item.id}, 'decrease')">-</button>
-                <button class="btn-icon" onclick="updateItemQuantity(${item.id}, 'increase')">+</button>
+            <td class="actions">
+                <button onclick="updateItemQuantity(${item.id}, 'decrease')" class="action-btn decrease">-</button>
+                <button onclick="updateItemQuantity(${item.id}, 'increase')" class="action-btn increase">+</button>
             </td>
         </tr>
     `).join('');
@@ -299,6 +326,7 @@ function getStatusText(quantity) {
 function updateStats(items) {
     const totalItems = items.length;
     const lowStock = items.filter(item => item.quantity > 0 && item.quantity < 5).length;
+
     animateCounter('totalItems', totalItems);
     animateCounter('lowStock', lowStock);
     animateCounter('recentUpdates', 5);
@@ -307,6 +335,7 @@ function updateStats(items) {
 function animateCounter(elementId, targetValue) {
     const element = document.getElementById(elementId);
     if (!element) return;
+
     const startValue = parseInt(element.textContent) || 0;
     const duration = 1000;
     const startTime = performance.now();
@@ -315,11 +344,14 @@ function animateCounter(elementId, targetValue) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const currentValue = Math.floor(startValue + (targetValue - startValue) * progress);
+
         element.textContent = currentValue;
+
         if (progress < 1) {
             requestAnimationFrame(update);
         }
     }
+
     requestAnimationFrame(update);
 }
 
@@ -327,17 +359,26 @@ window.updateItemQuantity = async function(id, action) {
     try {
         const row = document.querySelector(`tr[data-id="${id}"]`);
         if (!row) return;
+
         const itemName = row.cells[0].textContent;
         const currentQty = parseInt(row.cells[1].textContent);
         let newQty = action === 'increase' ? currentQty + 1 : currentQty - 1;
+
         if (newQty < 0) newQty = 0;
 
         const response = await fetch('/api/inventory/update', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ item: itemName, quantity: newQty })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                item: itemName,
+                quantity: newQty
+            })
         });
+
         const result = await response.json();
+
         if (result.status === 'success') {
             showToast(`Item ${action}d successfully!`, 'success');
             fetchInventory();
@@ -350,16 +391,24 @@ window.updateItemQuantity = async function(id, action) {
 
 async function handleAddItem(e) {
     e.preventDefault();
+
     const itemName = document.getElementById('itemName').value;
     const quantity = parseInt(document.getElementById('itemQuantity').value);
 
     try {
         const response = await fetch('/api/inventory/add', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ item: itemName, quantity: quantity })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                item: itemName,
+                quantity: quantity
+            })
         });
+
         const result = await response.json();
+
         if (result.status === 'success') {
             document.getElementById('modalOverlay').classList.remove('active');
             e.target.reset();
@@ -376,7 +425,9 @@ function handleSearch(e) {
     const searchTerm = e.target.value.toLowerCase();
     const tableBody = document.getElementById('tableBody');
     if (!tableBody) return;
+
     const rows = tableBody.getElementsByTagName('tr');
+
     for (let row of rows) {
         const itemName = row.cells[0].textContent.toLowerCase();
         row.style.display = itemName.includes(searchTerm) ? '' : 'none';
@@ -386,10 +437,16 @@ function handleSearch(e) {
 function showToast(message, type = 'info') {
     const toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) return;
+
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()">×</button>`;
+    toast.innerHTML = `
+        ${message}
+        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+    `;
+
     toastContainer.appendChild(toast);
+
     setTimeout(() => {
         toast.classList.add('fade-out');
         setTimeout(() => toast.remove(), 300);

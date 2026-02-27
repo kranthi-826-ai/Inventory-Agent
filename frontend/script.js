@@ -1,3 +1,6 @@
+// API Base URL - matches backend
+const API_BASE_URL = 'http://localhost:5000/api';
+
 // Speech Recognition Setup - with fallback
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
@@ -25,29 +28,35 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializePage() {
     const micButton = document.getElementById('micButton');
     const openDashboardBtn = document.getElementById('openDashboardBtn');
+
     if (micButton) {
         micButton.addEventListener('click', toggleListening);
     }
+
     if (openDashboardBtn) {
         openDashboardBtn.addEventListener('click', () => {
             window.location.href = 'dashboard.html';
         });
     }
+
     const addItemBtn = document.getElementById('addItemBtn');
     const modalOverlay = document.getElementById('modalOverlay');
     const closeModal = document.getElementById('closeModal');
     const addItemForm = document.getElementById('addItemForm');
     const searchInput = document.getElementById('searchInput');
+
     if (addItemBtn) {
         addItemBtn.addEventListener('click', () => {
             modalOverlay.classList.add('active');
         });
     }
+
     if (closeModal) {
         closeModal.addEventListener('click', () => {
             modalOverlay.classList.remove('active');
         });
     }
+
     if (modalOverlay) {
         modalOverlay.addEventListener('click', (e) => {
             if (e.target === modalOverlay) {
@@ -55,24 +64,24 @@ function initializePage() {
             }
         });
     }
+
     if (addItemForm) {
         addItemForm.addEventListener('submit', handleAddItem);
     }
+
     if (searchInput) {
         searchInput.addEventListener('input', handleSearch);
     }
 
-        // Clear All button
+    // Clear All button
     const clearAllBtn = document.getElementById('clearAllBtn');
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', async () => {
             if (confirm('Are you sure you want to clear all inventory items? This action cannot be undone.')) {
                 try {
-                    const response = await fetch('/api/clear', {
+                    const response = await fetch(`${API_BASE_URL}/clear`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
+                        headers: { 'Content-Type': 'application/json' }
                     });
                     const data = await response.json();
                     if (data.success) {
@@ -87,9 +96,11 @@ function initializePage() {
             }
         });
     }
+
     if (document.getElementById('inventoryTable')) {
         fetchInventory();
     }
+
     setupSpeechRecognition();
 }
 
@@ -98,6 +109,7 @@ function setupSpeechRecognition() {
         console.log('Speech recognition not available');
         return;
     }
+
     const languageSelect = document.getElementById('languageSelect');
     if (languageSelect) {
         languageSelect.addEventListener('change', (e) => {
@@ -105,11 +117,13 @@ function setupSpeechRecognition() {
             showToast(`Language changed`, 'info');
         });
     }
+
     recognition.onstart = () => {
         console.log('Voice recognition started');
         isListening = true;
         updateMicUI(true);
     };
+
     recognition.onresult = (event) => {
         let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -124,11 +138,13 @@ function setupSpeechRecognition() {
             }
         }
     };
+
     recognition.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
         showToast(`Error: ${event.error}`, 'error');
         stopListening();
     };
+
     recognition.onend = () => {
         console.log('Voice recognition ended');
         if (isListening) {
@@ -181,7 +197,9 @@ function updateMicUI(isActive) {
     const micButton = document.getElementById('micButton');
     const waveform = document.getElementById('waveform');
     const statusBadge = document.getElementById('statusBadge');
+
     if (!micButton || !waveform || !statusBadge) return;
+
     if (isActive) {
         micButton.classList.add('listening');
         waveform.classList.add('active');
@@ -200,15 +218,12 @@ function updateMicUI(isActive) {
 function parseCommand(text) {
     const previewContent = document.getElementById('previewContent');
     if (!previewContent) return;
+
     sendVoiceCommand({ text: text })
         .then(response => {
             if (response && response.data) {
                 const parsed = response.data.parsed_command;
-                previewContent.innerHTML = `
-                    <div style="padding: 15px; background: rgba(16, 185, 129, 0.1); border-radius: 8px;">
-                        <p><strong>Action:</strong> ${parsed.action} <strong>Item:</strong> ${parsed.item} <strong>Quantity:</strong> ${parsed.quantity}</p>
-                    </div>
-                `;
+                previewContent.innerHTML = `<p><strong>Action:</strong> ${parsed.action} <strong>Item:</strong> ${parsed.item} <strong>Quantity:</strong> ${parsed.quantity}</p>`;
                 showToast(response.message, 'success');
                 if (window.location.pathname.includes('dashboard')) {
                     fetchInventory();
@@ -216,13 +231,13 @@ function parseCommand(text) {
             }
         })
         .catch(error => {
-            previewContent.innerHTML = `<p style="color: red;">Error parsing command: ${error.message}</p>`;
+            previewContent.innerHTML = `<p>Error parsing command: ${error.message}</p>`;
         });
 }
 
 async function sendVoiceCommand(command) {
     try {
-        const response = await fetch('http://localhost:5000/api/voice-command', {
+        const response = await fetch(`${API_BASE_URL}/voice-command`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(command)
@@ -241,8 +256,9 @@ async function sendVoiceCommand(command) {
 async function fetchInventory() {
     const tableBody = document.getElementById('tableBody');
     if (!tableBody) return;
+
     try {
-        const response = await fetch('http://localhost:5000/api/inventory');
+        const response = await fetch(`${API_BASE_URL}/inventory`);
         const result = await response.json();
         if (result.status === 'success') {
             renderInventoryTable(result.data);
@@ -257,14 +273,15 @@ async function fetchInventory() {
 function renderInventoryTable(items) {
     const tableBody = document.getElementById('tableBody');
     if (!tableBody) return;
+
     tableBody.innerHTML = items.map((item, idx) => `
         <tr data-id="${item.id}">
             <td>${item.name}</td>
             <td>${item.quantity}</td>
             <td><span class="status-badge ${getStatusClass(item.quantity)}">${getStatusText(item.quantity)}</span></td>
             <td>
-                <button onclick="updateItemQuantity(${item.id}, 'decrease')" class="action-btn">-</button>
-                <button onclick="updateItemQuantity(${item.id}, 'increase')" class="action-btn">+</button>
+                <button class="btn-icon" onclick="updateItemQuantity(${item.id}, 'decrease')">-</button>
+                <button class="btn-icon" onclick="updateItemQuantity(${item.id}, 'increase')">+</button>
             </td>
         </tr>
     `).join('');
@@ -296,6 +313,7 @@ function animateCounter(elementId, targetValue) {
     const startValue = parseInt(element.textContent) || 0;
     const duration = 1000;
     const startTime = performance.now();
+
     function update(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
@@ -316,7 +334,8 @@ window.updateItemQuantity = async function(id, action) {
         const currentQty = parseInt(row.cells[1].textContent);
         let newQty = action === 'increase' ? currentQty + 1 : currentQty - 1;
         if (newQty < 0) newQty = 0;
-        const response = await fetch('http://localhost:5000/api/inventory/update', {
+
+        const response = await fetch(`${API_BASE_URL}/inventory/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ item: itemName, quantity: newQty })
@@ -336,8 +355,9 @@ async function handleAddItem(e) {
     e.preventDefault();
     const itemName = document.getElementById('itemName').value;
     const quantity = parseInt(document.getElementById('itemQuantity').value);
+
     try {
-        const response = await fetch('http://localhost:5000/api/inventory/add', {
+        const response = await fetch(`${API_BASE_URL}/inventory/add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ item: itemName, quantity: quantity })
@@ -371,7 +391,7 @@ function showToast(message, type = 'info') {
     if (!toastContainer) return;
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.innerHTML = `<p>${message}</p><button onclick="this.parentElement.remove()">×</button>`;
+    toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()">×</button>`;
     toastContainer.appendChild(toast);
     setTimeout(() => {
         toast.classList.add('fade-out');

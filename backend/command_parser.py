@@ -2,138 +2,115 @@ import re
 import logging
 from typing import Optional
 
-from shared.constants import ACTIONS
+from shared.constants import ACTIONS, ACTION_KEYWORDS, STOP_WORDS
 from shared.models import ParsedCommand
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Stop words to ignore when extracting item names
-STOP_WORDS = {'and', 'also', 'the', 'a', 'an', 'of', 'in', 'to', 'for', 'with', 'please', 'can', 'you', 'i', 'want', 'need', 'successfully', 'under', 'forest', 'packets', 'packet'}
 
 class CommandParser:
-    """Parse natural language commands into structured data"""
-    
+    """Parse natural language commands in multiple languages into structured data"""
+
     @staticmethod
     def parse(text: str) -> Optional[ParsedCommand]:
         """
         Parse a text command into action, item, and quantity.
         Returns ParsedCommand object or None if parsing fails.
+        Supports English, Telugu, and Hindi.
         """
         if not text or not text.strip():
             return None
-        
+
         text = text.strip().lower()
         logger.info(f"Parsing command: {text}")
-        
+
         # Try structured patterns first
         parsed = CommandParser._try_structured_parse(text)
         if parsed:
             return parsed
-        
+
         # Fall back to flexible parsing
         return CommandParser._flexible_parse(text)
-    
+
     @staticmethod
     def _try_structured_parse(text: str) -> Optional[ParsedCommand]:
-        """Try to parse using strict patterns"""
-        
-        # Pattern 1: "add 10 bags of rice" or "add 10 rice"
-        match = re.match(r'(?:add|put|insert)\s+(\d+)\s+(?:bags?|units?|pcs?|pieces?|kg|grams?)?\s*(?:of\s+)?([a-z\s]+?)(?:\s+and|\s+also|$)', text)
-        if match:
-            quantity = int(match.group(1))
-            item = CommandParser._clean_item_name(match.group(2))
-            return ParsedCommand(
-                action='add',
-                item=item,
-                quantity=quantity,
-                raw_text=text,
-                confidence=1.0
-            )
-        
-        # Pattern 2: "remove 5 rice" or "remove 5 bags of rice"
-        match = re.match(r'(?:remove|delete|take)\s+(\d+)\s+(?:bags?|units?|pcs?)?\s*(?:of\s+)?([a-z\s]+?)(?:\s+and|\s+also|$)', text)
-        if match:
-            quantity = int(match.group(1))
-            item = CommandParser._clean_item_name(match.group(2))
-            return ParsedCommand(
-                action='remove',
-                item=item,
-                quantity=quantity,
-                raw_text=text,
-                confidence=1.0
-            )
-        
-        # Pattern 3: "update rice to 20" or "set rice quantity to 20"
-        match = re.match(r'(?:update|change|set)\s+([a-z\s]+?)\s+(?:quantity\s+)?to\s+(\d+)', text)
-        if match:
-            item = CommandParser._clean_item_name(match.group(1))
-            quantity = int(match.group(2))
-            return ParsedCommand(
-                action='update',
-                item=item,
-                quantity=quantity,
-                raw_text=text,
-                confidence=1.0
-            )
-        
-        # Pattern 4: "check rice" or "how many rice"
-        match = re.match(r'(?:check|how\s+many|quantity\s+of)\s+([a-z\s]+)', text)
-        if match:
-            item = CommandParser._clean_item_name(match.group(1))
-            return ParsedCommand(
-                action='check',
-                item=item,
-                quantity=0,
-                raw_text=text,
-                confidence=1.0
-            )
-        
-        # Pattern 5: "list all" or "show inventory"
-        if re.match(r'(?:list|show|get)\s+(?:all|inventory)', text):
-            return ParsedCommand(
-                action='list',
-                item='all',
-                quantity=0,
-                raw_text=text,
-                confidence=1.0
-            )
-        
+        """Try to parse using strict patterns for multilingual support"""
+
+        # Pattern 1: "add 10 rice" or "10 బిస్కెట్లు ఆడ్ చెయ్" or "10 पैकेट जोड़ो"
+        for action_type in ['add', 'remove', 'update']:
+            keywords = ACTION_KEYWORDS[action_type]
+            # Build regex pattern from keywords
+            keyword_pattern = '|'.join([re.escape(k) for k in keywords])
+            
+            if action_type in ['add', 'remove']:
+                # Pattern: [quantity] [units] [item] [action] OR [action] [quantity] [units] [item]
+                pattern1 = rf'(\d+)\s*(?:[\u0C00-\u0C7F\u0900-\u097Fa-z]+?\s+)?([\u0C00-\u0C7F\u0900-\u097Fa-z\s]+?)\s*({keyword_pattern})'
+                pattern2 = rf'({keyword_pattern})\s+(\d+)\s*(?:[\u0C00-\u0C7F\u0900-\u097Fa-z]+?\s+)?([\u0C00-\u0C7F\u0900-\u097Fa-z\s]+)'
+                
+                match = re.search(pattern1, text, re.IGNORECASE)
+                if not match:
+                    match = re.search(pattern2, text, re.IGNORECASE)
+                    if match:
+                        # Reorder groups for pattern2
+                        quantity = match.group(2)
+                        item = match.group(3)
+                    else:
+                        continue
+                else:
+                    quantity = match.group(1)
+                    item = match.group(2)
+                
+                if match:
+                    quantity = int(quantity)
+                    item = CommandParser._clean_item_name(item)
+                    if item:
+                        return ParsedCommand(
+                            action=action_type,
+                            item=item,
+                            quantity=quantity,
+                            raw_text=text,
+                            confidence=1.0
+                        )
+
         return None
-    
+
     @staticmethod
     def _clean_item_name(raw_item: str) -> str:
         """Clean and normalize item name by removing stop words and extra spaces"""
+        if not raw_item:
+            return ''
+        
+        # Combine all stop words from all languages
+        all_stop_words = set()
+        for lang_stops in STOP_WORDS.values():
+            all_stop_words.update(lang_stops)
+        
         words = raw_item.strip().split()
         # Remove stop words and clean
-        cleaned = [w for w in words if w.lower() not in STOP_WORDS and w.strip()]
+        cleaned = [w for w in words if w.lower() not in all_stop_words and w.strip()]
         return ' '.join(cleaned).strip() if cleaned else raw_item.strip()
-    
+
     @staticmethod
     def _flexible_parse(text: str) -> Optional[ParsedCommand]:
-        """Fallback parser for less structured commands"""
+        """Fallback parser for less structured commands - multilingual"""
         words = text.split()
-        
-        # Find action
-        action_map = {
-            'add': 'add', 'put': 'add', 'insert': 'add',
-            'remove': 'remove', 'delete': 'remove', 'take': 'remove',
-            'update': 'update', 'change': 'update', 'set': 'update',
-            'check': 'check', 'how': 'check',
-            'list': 'list', 'show': 'list'
-        }
-        
+
+        # Find action using multilingual keywords
         action = None
         action_idx = -1
         for i, word in enumerate(words):
-            if word in action_map:
-                action = action_map[word]
-                action_idx = i
+            for action_type, keywords in ACTION_KEYWORDS.items():
+                if word.lower() in [k.lower() for k in keywords]:
+                    action = action_type
+                    action_idx = i
+                    break
+            if action:
                 break
-        
+
         if not action:
             return None
-        
+
         # Extract quantity
         quantity = 0
         quantity_idx = -1
@@ -142,26 +119,30 @@ class CommandParser:
                 quantity = int(word)
                 quantity_idx = i
                 break
+
+        # Extract item name (words that are not action, not quantity, not stop words)
+        all_stop_words = set()
+        for lang_stops in STOP_WORDS.values():
+            all_stop_words.update([s.lower() for s in lang_stops])
         
-        # Extract item name (words after action and quantity, before stop words)
+        # Collect all action keywords
+        all_action_keywords = set()
+        for keywords in ACTION_KEYWORDS.values():
+            all_action_keywords.update([k.lower() for k in keywords])
+        
         item_words = []
-        start_idx = max(action_idx + 1, quantity_idx + 1)
-        
-        for i in range(start_idx, len(words)):
-            word = words[i]
-            # Stop at common stop words
-            if word in STOP_WORDS or word in ['and', 'also']:
-                break
-            # Skip quantity words
-            if word.isdigit() or word in ['bags', 'bag', 'units', 'unit', 'of']:
+        for i, word in enumerate(words):
+            # Skip action words, quantity, and stop words
+            if (word.lower() in all_action_keywords or 
+                word.isdigit() or 
+                word.lower() in all_stop_words):
                 continue
             item_words.append(word)
-        
+
         item = ' '.join(item_words).strip()
-        
         if not item:
             return None
-        
+
         return ParsedCommand(
             action=action,
             item=item,
@@ -170,22 +151,24 @@ class CommandParser:
             confidence=0.7
         )
 
+
 def parse_command(text: str) -> Optional[ParsedCommand]:
     """Main function to parse commands"""
     return CommandParser.parse(text)
+
 
 if __name__ == "__main__":
     test_commands = [
         "add 10 bags of rice",
         "add 10 rice",
-        "add 5 water bottles",
+        "10 బిస్కెట్ ప్యాకెట్లు ఆడ్ చెయ్",
+        "10 पैकेट बिस्कुट जोड़ो",
         "remove 2 rice",
+        "5 నూనె తీసేయ",
         "update rice to 20",
         "check rice",
         "list all items",
-        "add 100 water bottles and also add biscuit packets",
     ]
-    
     for cmd in test_commands:
         result = parse_command(cmd)
         if result:

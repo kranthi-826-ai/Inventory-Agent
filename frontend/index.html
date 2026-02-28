@@ -3,92 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Inventory Agent</title>
+    <title>Voice Inventory Pro - Smart Voice Assistant</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <!-- Enhanced Animated Background -->
     <div class="gradient-bg">
+        <div class="floating-particle"></div>
+        <div class="floating-particle"></div>
         <div class="floating-particle"></div>
         <div class="floating-particle"></div>
         <div class="floating-particle"></div>
     </div>
 
     <div class="container">
-        <!-- Navbar -->
-        <nav class="glass-nav">
-            <
-                <svg class="navbar-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="45" fill="url(#gradient)"/>
-                    <path d="M35 50 L45 60 L65 40" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                    <defs>
-                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#6366f1"/>
-                            <stop offset="100%" style="stop-color:#8b5cf6"/>
-                        </linearGradient>
-                    </defs>
-                </svg>
+        <!-- Premium Navbar -->
+        <nav class="premium-nav glass-nav">
+            <div class="nav-left">
+                <div class="logo-wrapper">
+                    <svg class="navbar-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="45" fill="url(#gradient)"/>
+                        <path d="M35 50 L45 60 L65 40" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#6366f1"/>
+                                <stop offset="100%" style="stop-color:#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span class="logo-text">Voice<span class="text-gradient">Inventory</span></span>
+                </div>
+                <div class="nav-links">
+                    <a href="index.html" class="nav-link active">
+                        <i class="fas fa-microphone"></i>
+                        <span>Voice Input</span>
+                    </a>
+                    <a href="dashboard.html" class="nav-link">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
             </div>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link active">Voice Input</a>
-                <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <div class="nav-right">
+                <div class="quick-help">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Voice Guide</span>
+                </div>
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Voice+User&background=6366f1&color=fff&bold=true" alt="User" class="user-avatar">
+                </div>
             </div>
         </nav>
 
         <!-- Main Content -->
         <div class="voice-container fade-in">
-            <div class="glass-card voice-card">
-                <h1 class="hero-title">Voice Inventory Assistant</h1>
-                <p class="hero-subtitle">Speak naturally to manage your inventory</p>
-
-           <button class="mic-button" id="micButton">
-                <svg class="mic-icon-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" fill="white"/>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                    <line x1="8" y1="23" x2="16" y2="23" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <div class="mic-pulse"></div>
-            
-        
-            <!-- Waveform bars around mic -->
-            <div class="waveform-container" id="waveform">
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
+            <!-- Hero Section -->
+            <div class="voice-hero">
+                <h1 class="hero-title">
+                    Voice<span class="text-gradient">Inventory</span> Assistant
+                </h1>
+                <p class="hero-subtitle">
+                    <i class="fas fa-magic magic-icon"></i>
+                    Speak naturally to manage your inventory - Just say "Add 5 apples" or "Show me low stock items"
+                </p>
+                
+                <!-- Feature Pills -->
+                <div class="feature-pills">
+                    <span class="feature-pill"><i class="fas fa-box"></i> Add Items</span>
+                    <span class="feature-pill"><i class="fas fa-search"></i> Search</span>
+                    <span class="feature-pill"><i class="fas fa-chart-line"></i> Check Stock</span>
+                    <span class="feature-pill"><i class="fas fa-trash"></i> Remove Items</span>
+                    <span class="feature-pill"><i class="fas fa-edit"></i> Update Quantity</span>
+                </div>
             </div>
-</button>              
-         
-                  
-<!-- Recognized Text Panel -->
-                <div class="text-panel glass-card">
-                    <div class="panel-header">
-                        <span class="panel-title">Recognized Speech</span>
-                        <span class="status-badge" id="statusBadge">Ready</span>
+
+            <!-- Voice Interface Card -->
+            <div class="voice-interface-card premium-glass">
+                <!-- Voice Wave Background -->
+                <div class="voice-wave-bg">
+                    <div class="wave"></div>
+                    <div class="wave"></div>
+                    <div class="wave"></div>
+                </div>
+
+                <!-- Main Mic Section -->
+                <div class="mic-section">
+                    <button class="mic-button premium-mic" id="micButton">
+                        <div class="mic-inner">
+                            <svg class="mic-icon-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" fill="currentColor"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="mic-pulse"></div>
+                        <div class="mic-pulse-delay"></div>
+                    </button>
+
+                    <!-- Animated Waveform -->
+                    <div class="waveform-container" id="waveform">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
                     </div>
-                    <div class="recognized-text" id="recognizedText">
-                        Click the microphone and start speaking...
+
+                    <div class="mic-status" id="micStatus">
+                        <span class="status-dot"></span>
+                        <span class="status-text" id="statusBadge">Ready to listen</span>
                     </div>
                 </div>
 
-                <!-- Command Preview -->
-                <div class="command-preview glass-card" id="commandPreview">
-                    <div class="preview-header">
-                        <span class="preview-title">Command Preview</span>
+                <!-- Language Selector - Premium Version -->
+                <div class="language-selector-premium">
+                    <i class="fas fa-globe globe-icon"></i>
+                    <select id="languageSelect" class="language-dropdown-premium">
+                        <optgroup label="Indian Languages">
+                            <option value="hi-IN">🇮🇳 हिन्दी (Hindi)</option>
+                            <option value="ta-IN">🇮🇳 தமிழ் (Tamil)</option>
+                            <option value="te-IN">🇮🇳 తెలుగు (Telugu)</option>
+                            <option value="kn-IN">🇮🇳 ಕನ್ನಡ (Kannada)</option>
+                            <option value="ml-IN">🇮🇳 മലയാളം (Malayalam)</option>
+                            <option value="mr-IN">🇮🇳 मराठी (Marathi)</option>
+                            <option value="gu-IN">🇮🇳 ગુજરાતી (Gujarati)</option>
+                            <option value="bn-IN">🇮🇳 বাংলা (Bengali)</option>
+                        </optgroup>
+                        <optgroup label="International">
+                            <option value="en-US" selected>🇺🇸 English (US)</option>
+                            <option value="en-GB">🇬🇧 English (UK)</option>
+                            <option value="es-ES">🇪🇸 Español</option>
+                            <option value="fr-FR">🇫🇷 Français</option>
+                            <option value="de-DE">🇩🇪 Deutsch</option>
+                            <option value="ja-JP">🇯🇵 日本語</option>
+                            <option value="ko-KR">🇰🇷 한국어</option>
+                            <option value="zh-CN">🇨🇳 中文</option>
+                        </optgroup>
+                    </select>
+                    <div class="language-glow"></div>
+                </div>
+
+                <!-- Content Grid -->
+                <div class="voice-content-grid">
+                    <!-- Recognized Text Panel -->
+                    <div class="text-panel premium-glass">
+                        <div class="panel-header">
+                            <div class="panel-title-wrapper">
+                                <i class="fas fa-microphone-alt panel-icon"></i>
+                                <span class="panel-title">Recognized Speech</span>
+                            </div>
+                            <div class="panel-badge" id="realTimeStatus">
+                                <span class="badge-dot"></span>
+                                Listening
+                            </div>
+                        </div>
+                        <div class="recognized-text" id="recognizedText">
+                            <span class="placeholder-text">
+                                <i class="fas fa-arrow-up"></i>
+                                Click the microphone and start speaking...
+                            </span>
+                        </div>
+                        <!-- Voice Wave Mini -->
+                        <div class="voice-mini-wave">
+                            <span></span><span></span><span></span><span></span><span></span>
+                        </div>
                     </div>
-                    <div class="preview-content" id="previewContent">
-                        <span class="placeholder-text">No command detected</span>
+
+                    <!-- Command Preview Panel -->
+                    <div class="command-preview premium-glass" id="commandPreview">
+                        <div class="panel-header">
+                            <div class="panel-title-wrapper">
+                                <i class="fas fa-robot panel-icon"></i>
+                                <span class="panel-title">Command Preview</span>
+                            </div>
+                            <span class="command-badge">AI Powered</span>
+                        </div>
+                        <div class="preview-content" id="previewContent">
+                            <div class="command-placeholder">
+                                <i class="fas fa-magic command-placeholder-icon"></i>
+                                <span class="placeholder-text">Your command will appear here...</span>
+                            </div>
+                        </div>
+                        <!-- Command Suggestions -->
+                        <div class="command-suggestions">
+                            <span class="suggestion-label">Try saying:</span>
+                            <div class="suggestion-chips">
+                                <button class="suggestion-chip" onclick="suggestCommand('add 5 apples')">
+                                    "add 5 apples"
+                                </button>
+                                <button class="suggestion-chip" onclick="suggestCommand('show low stock')">
+                                    "show low stock"
+                                </button>
+                                <button class="suggestion-chip" onclick="suggestCommand('remove 2 bananas')">
+                                    "remove 2 bananas"
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Row -->
+                <div class="quick-stats-row">
+                    <div class="quick-stat">
+                        <i class="fas fa-box"></i>
+                        <div class="quick-stat-info">
+                            <span class="quick-stat-label">Total Items</span>
+                            <span class="quick-stat-value" id="quickTotalItems">0</span>
+                        </div>
+                    </div>
+                    <div class="quick-stat">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="quick-stat-info">
+                            <span class="quick-stat-label">Low Stock</span>
+                            <span class="quick-stat-value" id="quickLowStock">0</span>
+                        </div>
+                    </div>
+                    <div class="quick-stat">
+                        <i class="fas fa-clock"></i>
+                        <div class="quick-stat-info">
+                            <span class="quick-stat-label">Last Update</span>
+                            <span class="quick-stat-value" id="quickLastUpdate">Just now</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="action-buttons">
-                    <button class="btn-primary glow-button" id="openDashboardBtn">
-                        Open Dashboard
-                        <span class="btn-ripple"></span>
+                <div class="action-buttons-grid">
+                    <button class="action-card" id="openDashboardBtn">
+                        <div class="action-card-icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <div class="action-card-content">
+                            <span class="action-card-title">Open Dashboard</span>
+                            <span class="action-card-desc">View analytics & reports</span>
+                        </div>
+                        <i class="fas fa-arrow-right action-arrow"></i>
                     </button>
+
+                    <button class="action-card secondary" onclick="showVoiceCommands()">
+                        <div class="action-card-icon">
+                            <i class="fas fa-list"></i>
+                        </div>
+                        <div class="action-card-content">
+                            <span class="action-card-title">Voice Commands</span>
+                            <span class="action-card-desc">See what you can say</span>
+                        </div>
+                        <i class="fas fa-chevron-right action-arrow"></i>
+                    </button>
+                </div>
+
+                <!-- Recent Voice Commands -->
+                <div class="recent-commands">
+                    <div class="recent-header">
+                        <i class="fas fa-history"></i>
+                        <span>Recent Commands</span>
+                    </div>
+                    <div class="recent-list" id="recentCommandsList">
+                        <!-- Dynamically populated -->
+                        <div class="recent-item">
+                            <i class="fas fa-microphone"></i>
+                            <span>Added 5 apples to inventory</span>
+                            <small>2 min ago</small>
+                        </div>
+                        <div class="recent-item">
+                            <i class="fas fa-microphone"></i>
+                            <span>Checked stock for bananas</span>
+                            <small>15 min ago</small>
+                        </div>
+                        <div class="recent-item">
+                            <i class="fas fa-microphone"></i>
+                            <span>Removed 3 oranges</span>
+                            <small>1 hour ago</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Commands Modal -->
+    <div class="modal-overlay" id="voiceCommandsModal">
+        <div class="modal-container premium-modal commands-modal">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-microphone-alt modal-icon"></i>
+                    <h3>Voice Commands Guide</h3>
+                </div>
+                <button class="close-modal" onclick="closeVoiceCommands()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="commands-grid">
+                    <div class="command-category">
+                        <h4><i class="fas fa-plus-circle"></i> Adding Items</h4>
+                        <ul>
+                            <li>"Add 5 apples"</li>
+                            <li>"Add 10 bananas to inventory"</li>
+                            <li>"Add new item headphones quantity 3"</li>
+                        </ul>
+                    </div>
+                    <div class="command-category">
+                        <h4><i class="fas fa-minus-circle"></i> Removing Items</h4>
+                        <ul>
+                            <li>"Remove 2 apples"</li>
+                            <li>"Delete 5 bananas"</li>
+                            <li>"Remove all oranges"</li>
+                        </ul>
+                    </div>
+                    <div class="command-category">
+                        <h4><i class="fas fa-search"></i> Searching</h4>
+                        <ul>
+                            <li>"Show me apples"</li>
+                            <li>"Search for bananas"</li>
+                            <li>"Find low stock items"</li>
+                        </ul>
+                    </div>
+                    <div class="command-category">
+                        <h4><i class="fas fa-chart-line"></i> Reports</h4>
+                        <ul>
+                            <li>"Show dashboard"</li>
+                            <li>"What's the total stock?"</li>
+                            <li>"Show low inventory"</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -97,28 +340,50 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- Language Selection -->
-<div class="language-selector">
-    <select id="languageSelect" class="language-dropdown">
-        <option value="en-US">English (US)</option>
-        <option value="en-GB">English (UK)</option>
-        <option value="hi-IN">हिन्दी (Hindi)</option>
-        <option value="ta-IN">தமிழ் (Tamil)</option>
-        <option value="te-IN">తెలుగు (Telugu)</option>
-        <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
-        <option value="ml-IN">മലയാളം (Malayalam)</option>
-        <option value="mr-IN">मराठी (Marathi)</option>
-        <option value="gu-IN">ગુજરાતી (Gujarati)</option>
-        <option value="bn-IN">বাংলা (Bengali)</option>
-        <option value="es-ES">Español (Spanish)</option>
-        <option value="fr-FR">Français (French)</option>
-        <option value="de-DE">Deutsch (German)</option>
-        <option value="ja-JP">日本語 (Japanese)</option>
-        <option value="ko-KR">한국어 (Korean)</option>
-        <option value="zh-CN">中文 (Chinese)</option>
-    </select>
-</div>
     <script src="api.js"></script>
     <script src="script.js"></script>
+
+    <!-- Additional script for UI interactions (doesn't affect backend) -->
+    <script>
+        // Update quick stats - this will be overridden by your actual data
+        function updateQuickStats() {
+            // These will be updated by your actual script.js
+            // This is just for UI demonstration
+        }
+
+        // Suggest command function
+        function suggestCommand(command) {
+            const micButton = document.getElementById('micButton');
+            // Trigger your existing voice recognition with this command
+            // You can integrate this with your existing functionality
+            console.log('Suggested command:', command);
+        }
+
+        // Show voice commands modal
+        function showVoiceCommands() {
+            document.getElementById('voiceCommandsModal').style.display = 'flex';
+        }
+
+        // Close voice commands modal
+        function closeVoiceCommands() {
+            document.getElementById('voiceCommandsModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('voiceCommandsModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Update real-time status (your existing functionality will override this)
+        setInterval(() => {
+            const statusBadge = document.getElementById('statusBadge');
+            if (statusBadge && !statusBadge.classList.contains('listening')) {
+                // Just for animation
+            }
+        }, 3000);
+    </script>
 </body>
 </html>

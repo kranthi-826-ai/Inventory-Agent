@@ -16,10 +16,16 @@ if (SpeechRecognition) {
 // State management
 let isListening = false;
 let finalTranscript = '';
+let recognitionTimeout = null;
+let commandHistory = JSON.parse(localStorage.getItem('commandHistory')) || [];
 
 // DOM Elements
 document.addEventListener('DOMContentLoaded', () => {
     initializePage();
+    initializeSettings();
+    initializeAnimations();
+    loadCommandHistory();
+    updateQuickStats();
 });
 
 function initializePage() {
@@ -28,11 +34,22 @@ function initializePage() {
 
     if (micButton) {
         micButton.addEventListener('click', toggleListening);
+        micButton.addEventListener('mouseenter', () => {
+            if (!isListening) {
+                micButton.classList.add('hover');
+            }
+        });
+        micButton.addEventListener('mouseleave', () => {
+            micButton.classList.remove('hover');
+        });
     }
 
     if (openDashboardBtn) {
         openDashboardBtn.addEventListener('click', () => {
-            window.location.href = 'dashboard.html';
+            animateButton(openDashboardBtn);
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 300);
         });
     }
 
@@ -44,59 +61,101 @@ function initializePage() {
 
     if (addItemBtn) {
         addItemBtn.addEventListener('click', () => {
+            animateButton(addItemBtn);
             modalOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
         });
     }
 
     if (closeModal) {
         closeModal.addEventListener('click', () => {
-            modalOverlay.classList.remove('active');
+            closeModalWithAnimation(modalOverlay);
         });
     }
 
     if (modalOverlay) {
         modalOverlay.addEventListener('click', (e) => {
             if (e.target === modalOverlay) {
-                modalOverlay.classList.remove('active');
+                closeModalWithAnimation(modalOverlay);
             }
         });
     }
 
     if (addItemForm) {
         addItemForm.addEventListener('submit', handleAddItem);
+        // Add input animations
+        const inputs = addItemForm.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('focused');
+            });
+            input.addEventListener('blur', () => {
+                if (!input.value) {
+                    input.parentElement.classList.remove('focused');
+                }
+            });
+        });
     }
 
     if (searchInput) {
         searchInput.addEventListener('input', handleSearch);
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('focused');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('focused');
+        });
     }
 
-    // Clear All button - uses relative URL since Flask serves both frontend & backend on port 5000
+    // Clear All button with enhanced UX
     const clearAllBtn = document.getElementById('clearAllBtn');
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', async () => {
-            if (confirm('Are you sure you want to clear all inventory items? This action cannot be undone.')) {
-                try {
-                    const response = await fetch('/api/clear', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
+            showConfirmationDialog(
+                'Clear All Items',
+                'Are you sure you want to clear all inventory items? This action cannot be undone.',
+                async () => {
+                    try {
+                        animateButton(clearAllBtn);
+                        showLoader(clearAllBtn);
+                        
+                        const response = await fetch('/api/clear', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            showToast(data.message, 'success', 3000);
+                            fetchInventory();
+                            playSuccessSound();
+                        } else {
+                            showToast(data.message, 'error');
                         }
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        showToast(data.message, 'info');
-                        fetchInventory();
-                    } else {
-                        showToast(data.message, 'error');
+                    } catch (error) {
+                        showToast('Error clearing inventory', 'error');
+                    } finally {
+                        hideLoader(clearAllBtn);
                     }
-                } catch (error) {
-                    showToast('Error clearing inventory', 'error');
                 }
-            }
+            );
         });
     }
+
+    // Initialize select all checkbox
+    const selectAllCheckbox = document.querySelector('.select-all-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+        });
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', handleKeyboardShortcuts);
 
     if (document.getElementById('inventoryTable')) {
         fetchInventory();
@@ -105,9 +164,37 @@ function initializePage() {
     setupSpeechRecognition();
 }
 
+function initializeAnimations() {
+    // Add floating animation to cards
+    const cards = document.querySelectorAll('.stat-card, .glass-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in-up');
+    });
+
+    // Initialize particle effect
+    createParticles();
+}
+
+function createParticles() {
+    const container = document.querySelector('.gradient-bg');
+    if (!container) return;
+
+    for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'floating-particle';
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        particle.style.animationDelay = `${Math.random() * 5}s`;
+        particle.style.animationDuration = `${10 + Math.random() * 10}s`;
+        container.appendChild(particle);
+    }
+}
+
 function setupSpeechRecognition() {
     if (!recognitionSupported || !recognition) {
         console.log('Speech recognition not available');
+        showToast('Speech recognition not supported in your browser', 'warning');
         return;
     }
 
@@ -115,7 +202,13 @@ function setupSpeechRecognition() {
     if (languageSelect) {
         languageSelect.addEventListener('change', (e) => {
             recognition.lang = e.target.value;
-            showToast(`Language changed`, 'info');
+            const selectedOption = languageSelect.options[languageSelect.selectedIndex];
+            const languageName = selectedOption.text.split(')')[0] + ')';
+            showToast(`Language changed to ${languageName}`, 'success', 2000);
+            
+            // Add ripple effect to language select
+            languageSelect.classList.add('ripple');
+            setTimeout(() => languageSelect.classList.remove('ripple'), 500);
         });
     }
 
@@ -123,19 +216,45 @@ function setupSpeechRecognition() {
         console.log('Voice recognition started');
         isListening = true;
         updateMicUI(true);
+        
+        // Clear previous timeout
+        if (recognitionTimeout) {
+            clearTimeout(recognitionTimeout);
+        }
+        
+        // Auto-stop after 10 seconds of inactivity
+        recognitionTimeout = setTimeout(() => {
+            if (isListening) {
+                showToast('Listening timeout. Please try again.', 'info');
+                stopListening();
+            }
+        }, 10000);
     };
 
     recognition.onresult = (event) => {
+        // Reset timeout on result
+        if (recognitionTimeout) {
+            clearTimeout(recognitionTimeout);
+            recognitionTimeout = setTimeout(() => {
+                if (isListening) {
+                    stopListening();
+                }
+            }, 3000);
+        }
+
         let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
                 finalTranscript += transcript + ' ';
-                document.getElementById('recognizedText').textContent = finalTranscript;
+                updateRecognizedText(finalTranscript, true);
                 parseCommand(finalTranscript);
+                
+                // Add to command history
+                addToCommandHistory(finalTranscript);
             } else {
                 interimTranscript += transcript;
-                document.getElementById('recognizedText').textContent = interimTranscript + '...';
+                updateRecognizedText(interimTranscript, false);
             }
         }
     };
@@ -143,21 +262,27 @@ function setupSpeechRecognition() {
     recognition.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
         
-        // Better error handling for different error types
-        if (event.error === 'network') {
-            showToast('Check your internet connection. Speech recognition requires network access.', 'error');
-        } else if (event.error === 'not-allowed') {
-            showToast('Microphone permission denied. Please allow microphone access.', 'error');
-        } else if (event.error === 'no-speech') {
-            showToast('No speech detected. Please try again.', 'warning');
-        } else {
-            showToast(`Error: ${event.error}`, 'error');
-        }
+        const errorMessages = {
+            'network': 'Check your internet connection. Speech recognition requires network access.',
+            'not-allowed': 'Microphone permission denied. Please allow microphone access.',
+            'no-speech': 'No speech detected. Please try again.',
+            'audio-capture': 'No microphone found. Please connect a microphone.',
+            'aborted': 'Speech recognition was aborted.'
+        };
+        
+        const message = errorMessages[event.error] || `Error: ${event.error}`;
+        const type = event.error === 'no-speech' ? 'warning' : 'error';
+        
+        showToast(message, type);
         stopListening();
     };
 
     recognition.onend = () => {
         console.log('Voice recognition ended');
+        if (recognitionTimeout) {
+            clearTimeout(recognitionTimeout);
+        }
+        
         if (isListening) {
             try {
                 recognition.start();
@@ -169,6 +294,22 @@ function setupSpeechRecognition() {
             stopListening();
         }
     };
+}
+
+function updateRecognizedText(text, isFinal) {
+    const recognizedText = document.getElementById('recognizedText');
+    const realTimeStatus = document.getElementById('realTimeStatus');
+    
+    if (!recognizedText) return;
+    
+    if (isFinal) {
+        recognizedText.innerHTML = `<span class="final-text">${text}</span>`;
+        if (realTimeStatus) {
+            realTimeStatus.innerHTML = '<span class="badge-dot"></span> Processing';
+        }
+    } else {
+        recognizedText.innerHTML = `<span class="interim-text">${text}</span><span class="cursor-blink">|</span>`;
+    }
 }
 
 function toggleListening() {
@@ -189,9 +330,20 @@ function startListening() {
 
     try {
         finalTranscript = '';
-        document.getElementById('recognizedText').textContent = 'Listening...';
-        document.getElementById('previewContent').innerHTML = '<p>Speak a command...</p>';
+        updateRecognizedText('Listening...', false);
+        
+        const previewContent = document.getElementById('previewContent');
+        if (previewContent) {
+            previewContent.innerHTML = `
+                <div class="command-processing">
+                    <div class="processing-spinner"></div>
+                    <span>Speak a command...</span>
+                </div>
+            `;
+        }
+        
         recognition.start();
+        playStartSound();
     } catch (error) {
         console.error('Failed to start recognition:', error);
         showToast('Failed to start voice recognition', 'error');
@@ -204,12 +356,18 @@ function stopListening() {
         recognition.stop();
     }
     updateMicUI(false);
+    
+    const realTimeStatus = document.getElementById('realTimeStatus');
+    if (realTimeStatus) {
+        realTimeStatus.innerHTML = '<span class="badge-dot"></span> Ready';
+    }
 }
 
 function updateMicUI(isActive) {
     const micButton = document.getElementById('micButton');
     const waveform = document.getElementById('waveform');
     const statusBadge = document.getElementById('statusBadge');
+    const micStatus = document.getElementById('micStatus');
 
     if (!micButton || !waveform || !statusBadge) return;
 
@@ -219,13 +377,31 @@ function updateMicUI(isActive) {
         statusBadge.textContent = 'Listening...';
         statusBadge.style.background = 'rgba(16, 185, 129, 0.2)';
         statusBadge.style.borderColor = '#10b981';
+        
+        if (micStatus) {
+            micStatus.classList.add('active');
+        }
+        
+        // Animate waveform bars
+        animateWaveform();
     } else {
         micButton.classList.remove('listening');
         waveform.classList.remove('active');
         statusBadge.textContent = 'Ready';
         statusBadge.style.background = 'rgba(99, 102, 241, 0.2)';
         statusBadge.style.borderColor = '#6366f1';
+        
+        if (micStatus) {
+            micStatus.classList.remove('active');
+        }
     }
+}
+
+function animateWaveform() {
+    const bars = document.querySelectorAll('.wave-bar');
+    bars.forEach((bar, index) => {
+        bar.style.animation = `waveform ${0.5 + index * 0.1}s ease-in-out infinite`;
+    });
 }
 
 function parseCommand(text) {
@@ -234,24 +410,68 @@ function parseCommand(text) {
 
     sendVoiceCommand({ text: text })
         .then(response => {
-            // Fixed: Check response.status === 'success' instead of response.data
             if (response && response.status === 'success' && response.data) {
                 const parsed = response.data.parsed_command;
-                previewContent.innerHTML = `<p><strong>Action:</strong> ${parsed.action} | <strong>Item:</strong> ${parsed.item} | <strong>Quantity:</strong> ${parsed.quantity}</p>`;
-                showToast(response.message, 'success');
+                
+                // Create enhanced command preview
+                previewContent.innerHTML = `
+                    <div class="command-result">
+                        <div class="command-badge ${parsed.action}">
+                            <i class="fas fa-${getActionIcon(parsed.action)}"></i>
+                            ${parsed.action.toUpperCase()}
+                        </div>
+                        <div class="command-details">
+                            <div class="command-item">
+                                <span class="command-label">Item</span>
+                                <span class="command-value">${parsed.item}</span>
+                            </div>
+                            <div class="command-item">
+                                <span class="command-label">Quantity</span>
+                                <span class="command-value quantity">${parsed.quantity}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                showToast(response.message, 'success', 3000);
+                playSuccessSound();
 
                 if (window.location.pathname.includes('dashboard')) {
                     fetchInventory();
                 }
+                
+                // Update quick stats
+                updateQuickStats();
             } else {
-                previewContent.innerHTML = `<p>Error: ${response.message || 'Failed to parse command'}</p>`;
+                previewContent.innerHTML = `
+                    <div class="command-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>${response.message || 'Failed to parse command'}</span>
+                    </div>
+                `;
                 showToast(response.message || 'Failed to parse command', 'error');
             }
         })
         .catch(error => {
-            previewContent.innerHTML = `<p>Error parsing command: ${error.message}</p>`;
+            previewContent.innerHTML = `
+                <div class="command-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Error parsing command: ${error.message}</span>
+                </div>
+            `;
             showToast('Error connecting to server', 'error');
         });
+}
+
+function getActionIcon(action) {
+    const icons = {
+        'add': 'plus-circle',
+        'remove': 'minus-circle',
+        'update': 'edit',
+        'check': 'search',
+        'delete': 'trash'
+    };
+    return icons[action] || 'microphone';
 }
 
 async function sendVoiceCommand(command) {
@@ -276,9 +496,48 @@ async function sendVoiceCommand(command) {
     }
 }
 
+function addToCommandHistory(command) {
+    const timestamp = new Date().toLocaleTimeString();
+    commandHistory.unshift({ command, timestamp });
+    
+    if (commandHistory.length > 10) {
+        commandHistory.pop();
+    }
+    
+    localStorage.setItem('commandHistory', JSON.stringify(commandHistory));
+    displayCommandHistory();
+}
+
+function displayCommandHistory() {
+    const recentList = document.getElementById('recentCommandsList');
+    if (!recentList) return;
+    
+    recentList.innerHTML = commandHistory.map(item => `
+        <div class="recent-item">
+            <i class="fas fa-microphone"></i>
+            <span>${item.command}</span>
+            <small>${item.timestamp}</small>
+        </div>
+    `).join('');
+}
+
+function loadCommandHistory() {
+    displayCommandHistory();
+}
+
 async function fetchInventory() {
     const tableBody = document.getElementById('tableBody');
     if (!tableBody) return;
+
+    // Show loading state
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="6" class="loading-cell">
+                <div class="loading-spinner"></div>
+                <span>Loading inventory...</span>
+            </td>
+        </tr>
+    `;
 
     try {
         const response = await fetch('/api/inventory');
@@ -287,10 +546,21 @@ async function fetchInventory() {
         if (result.status === 'success') {
             renderInventoryTable(result.data);
             updateStats(result.data);
+            updateQuickStats(result.data);
         }
     } catch (error) {
         console.error('Error fetching inventory:', error);
         showToast('Error loading inventory', 'error');
+        
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="error-cell">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Failed to load inventory</span>
+                    <button onclick="fetchInventory()" class="retry-btn">Retry</button>
+                </td>
+            </tr>
+        `;
     }
 }
 
@@ -298,38 +568,240 @@ function renderInventoryTable(items) {
     const tableBody = document.getElementById('tableBody');
     if (!tableBody) return;
 
-    tableBody.innerHTML = items.map((item) => `
-        <tr data-id="${item.id}">
-            <td>${item.name}</td>
-            <td>${item.quantity}</td>
-            <td><span class="status-badge ${getStatusClass(item.quantity)}">${getStatusText(item.quantity)}</span></td>
-            <td class="actions">
-                <button onclick="updateItemQuantity(${item.id}, 'decrease')" class="action-btn decrease">-</button>
-                <button onclick="updateItemQuantity(${item.id}, 'increase')" class="action-btn increase">+</button>
+    if (items.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="empty-cell">
+                    <i class="fas fa-box-open"></i>
+                    <span>No items in inventory</span>
+                    <button onclick="openAddItemModal()" class="btn-primary small">Add Item</button>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tableBody.innerHTML = items.map((item, index) => `
+        <tr data-id="${item.id}" class="inventory-row fade-in-up" style="animation-delay: ${index * 0.05}s">
+            <td><input type="checkbox" class="row-checkbox" data-id="${item.id}"></td>
+            <td>
+                <div class="item-details">
+                    <div class="item-icon">
+                        <i class="fas fa-${getItemIcon(item.name)}"></i>
+                    </div>
+                    <div class="item-info">
+                        <span class="item-name">${escapeHtml(item.name)}</span>
+                        <span class="item-sku">ID: ${item.id}</span>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <span class="quantity-badge ${getQuantityClass(item.quantity)}">
+                    ${item.quantity} units
+                </span>
+            </td>
+            <td>
+                <span class="status-badge ${getStatusClass(item.quantity)}">
+                    <span class="status-dot"></span>
+                    ${getStatusText(item.quantity)}
+                </span>
+            </td>
+            <td>
+                <span class="date-badge">
+                    ${getRelativeTime(item.updated_at || new Date())}
+                </span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    <button onclick="updateItemQuantity(${item.id}, 'decrease')" 
+                            class="action-btn decrease" 
+                            title="Decrease quantity"
+                            ${item.quantity <= 0 ? 'disabled' : ''}>
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button onclick="updateItemQuantity(${item.id}, 'increase')" 
+                            class="action-btn increase" 
+                            title="Increase quantity">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button onclick="showItemDetails(${item.id})" 
+                            class="action-btn details" 
+                            title="View details">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
             </td>
         </tr>
     `).join('');
+    
+    // Reattach event listeners to new checkboxes
+    attachCheckboxListeners();
+}
+
+function getItemIcon(itemName) {
+    const icons = {
+        'apple': 'apple-alt',
+        'banana': 'apple-alt',
+        'orange': 'orange',
+        'headphones': 'headphones',
+        'laptop': 'laptop',
+        'book': 'book',
+        'chair': 'chair',
+        'table': 'table'
+    };
+    
+    const name = itemName.toLowerCase();
+    for (let [key, icon] of Object.entries(icons)) {
+        if (name.includes(key)) return icon;
+    }
+    return 'box';
+}
+
+function getQuantityClass(quantity) {
+    if (quantity <= 0) return 'out';
+    if (quantity < 5) return 'low';
+    if (quantity < 10) return 'medium';
+    return 'high';
+}
+
+function getRelativeTime(date) {
+    const now = new Date();
+    const updated = new Date(date);
+    const diffInSeconds = Math.floor((now - updated) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return updated.toLocaleDateString();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function attachCheckboxListeners() {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    const selectAll = document.querySelector('.select-all-checkbox');
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            if (selectAll) {
+                selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            }
+            updateBulkActionsBar();
+        });
+    });
+}
+
+function updateBulkActionsBar() {
+    const selectedCount = document.querySelectorAll('.row-checkbox:checked').length;
+    let bulkBar = document.querySelector('.bulk-actions-bar');
+    
+    if (selectedCount > 0) {
+        if (!bulkBar) {
+            bulkBar = document.createElement('div');
+            bulkBar.className = 'bulk-actions-bar';
+            bulkBar.innerHTML = `
+                <div class="bulk-info">
+                    <span class="selected-count">${selectedCount}</span>
+                    <span>items selected</span>
+                </div>
+                <div class="bulk-buttons">
+                    <button onclick="bulkDelete()" class="bulk-btn delete">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                    <button onclick="bulkUpdate()" class="bulk-btn update">
+                        <i class="fas fa-edit"></i> Update
+                    </button>
+                </div>
+            `;
+            document.querySelector('.table-section').appendChild(bulkBar);
+        } else {
+            bulkBar.querySelector('.selected-count').textContent = selectedCount;
+        }
+        bulkBar.classList.add('show');
+    } else if (bulkBar) {
+        bulkBar.classList.remove('show');
+    }
 }
 
 function getStatusClass(quantity) {
     if (quantity <= 0) return 'out-of-stock';
     if (quantity < 5) return 'low-stock';
+    if (quantity < 10) return 'medium-stock';
     return 'in-stock';
 }
 
 function getStatusText(quantity) {
     if (quantity <= 0) return 'Out of Stock';
     if (quantity < 5) return 'Low Stock';
+    if (quantity < 10) return 'Medium Stock';
     return 'In Stock';
 }
 
 function updateStats(items) {
     const totalItems = items.length;
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
     const lowStock = items.filter(item => item.quantity > 0 && item.quantity < 5).length;
+    const outOfStock = items.filter(item => item.quantity <= 0).length;
 
     animateCounter('totalItems', totalItems);
     animateCounter('lowStock', lowStock);
-    animateCounter('recentUpdates', 5);
+    animateCounter('outOfStock', outOfStock);
+    animateCounter('totalQuantity', totalQuantity);
+    
+    // Update trend indicators
+    updateTrends(totalItems, lowStock);
+}
+
+function updateTrends(currentTotal, currentLowStock) {
+    const prevTotal = parseInt(localStorage.getItem('prevTotalItems')) || currentTotal;
+    const prevLowStock = parseInt(localStorage.getItem('prevLowStock')) || currentLowStock;
+    
+    updateTrendIndicator('totalItems', currentTotal - prevTotal);
+    updateTrendIndicator('lowStock', currentLowStock - prevLowStock);
+    
+    localStorage.setItem('prevTotalItems', currentTotal);
+    localStorage.setItem('prevLowStock', currentLowStock);
+}
+
+function updateTrendIndicator(elementId, change) {
+    const element = document.querySelector(`#${elementId}`).parentElement;
+    if (!element) return;
+    
+    let trendElement = element.querySelector('.stat-trend');
+    if (!trendElement) return;
+    
+    if (change > 0) {
+        trendElement.className = 'stat-trend positive';
+        trendElement.innerHTML = `<i class="fas fa-arrow-up"></i> +${change}`;
+    } else if (change < 0) {
+        trendElement.className = 'stat-trend negative';
+        trendElement.innerHTML = `<i class="fas fa-arrow-down"></i> ${change}`;
+    } else {
+        trendElement.className = 'stat-trend';
+        trendElement.innerHTML = '<i class="fas fa-minus"></i> 0';
+    }
+}
+
+function updateQuickStats(data) {
+    const quickTotal = document.getElementById('quickTotalItems');
+    const quickLowStock = document.getElementById('quickLowStock');
+    const quickLastUpdate = document.getElementById('quickLastUpdate');
+    
+    if (quickTotal && data) {
+        quickTotal.textContent = data.length;
+    }
+    
+    if (quickLowStock && data) {
+        quickLowStock.textContent = data.filter(item => item.quantity > 0 && item.quantity < 5).length;
+    }
+    
+    if (quickLastUpdate) {
+        quickLastUpdate.textContent = 'Just now';
+    }
 }
 
 function animateCounter(elementId, targetValue) {
@@ -360,11 +832,17 @@ window.updateItemQuantity = async function(id, action) {
         const row = document.querySelector(`tr[data-id="${id}"]`);
         if (!row) return;
 
-        const itemName = row.cells[0].textContent;
-        const currentQty = parseInt(row.cells[1].textContent);
+        const itemName = row.querySelector('.item-name').textContent;
+        const currentQty = parseInt(row.querySelector('.quantity-badge').textContent);
         let newQty = action === 'increase' ? currentQty + 1 : currentQty - 1;
 
         if (newQty < 0) newQty = 0;
+
+        // Add loading state to button
+        const button = event?.target?.closest('button');
+        if (button) {
+            button.classList.add('loading');
+        }
 
         const response = await fetch('/api/inventory/update', {
             method: 'POST',
@@ -380,12 +858,21 @@ window.updateItemQuantity = async function(id, action) {
         const result = await response.json();
 
         if (result.status === 'success') {
-            showToast(`Item ${action}d successfully!`, 'success');
+            showToast(`Item ${action}d successfully!`, 'success', 2000);
+            
+            // Animate the updated row
+            row.classList.add('highlight');
+            setTimeout(() => row.classList.remove('highlight'), 1000);
+            
             fetchInventory();
         }
     } catch (error) {
         console.error('Error updating item:', error);
         showToast('Error updating item', 'error');
+    } finally {
+        if (button) {
+            button.classList.remove('loading');
+        }
     }
 };
 
@@ -394,6 +881,11 @@ async function handleAddItem(e) {
 
     const itemName = document.getElementById('itemName').value;
     const quantity = parseInt(document.getElementById('itemQuantity').value);
+    const category = document.getElementById('itemCategory')?.value || 'General';
+    const unit = document.getElementById('itemUnit')?.value || 'Pieces';
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    showLoader(submitBtn);
 
     try {
         const response = await fetch('/api/inventory/add', {
@@ -403,21 +895,26 @@ async function handleAddItem(e) {
             },
             body: JSON.stringify({
                 item: itemName,
-                quantity: quantity
+                quantity: quantity,
+                category: category,
+                unit: unit
             })
         });
 
         const result = await response.json();
 
         if (result.status === 'success') {
-            document.getElementById('modalOverlay').classList.remove('active');
+            closeModalWithAnimation(document.getElementById('modalOverlay'));
             e.target.reset();
-            showToast('Item added successfully!', 'success');
+            showToast('Item added successfully!', 'success', 3000);
+            playSuccessSound();
             fetchInventory();
         }
     } catch (error) {
         console.error('Error adding item:', error);
         showToast('Error adding item', 'error');
+    } finally {
+        hideLoader(submitBtn);
     }
 }
 
@@ -427,48 +924,159 @@ function handleSearch(e) {
     if (!tableBody) return;
 
     const rows = tableBody.getElementsByTagName('tr');
+    let visibleCount = 0;
 
     for (let row of rows) {
-        const itemName = row.cells[0].textContent.toLowerCase();
-        row.style.display = itemName.includes(searchTerm) ? '' : 'none';
+        if (row.classList.contains('loading-cell') || row.classList.contains('empty-cell')) continue;
+        
+        const itemName = row.querySelector('.item-name')?.textContent.toLowerCase() || '';
+        const itemId = row.querySelector('.item-sku')?.textContent.toLowerCase() || '';
+        const matches = itemName.includes(searchTerm) || itemId.includes(searchTerm);
+        
+        row.style.display = matches ? '' : 'none';
+        if (matches) visibleCount++;
+    }
+    
+    // Show no results message
+    const noResults = document.querySelector('.no-results-row');
+    if (visibleCount === 0 && rows.length > 1) {
+        if (!noResults) {
+            const noResultsRow = document.createElement('tr');
+            noResultsRow.className = 'no-results-row';
+            noResultsRow.innerHTML = `
+                <td colspan="6" class="empty-cell">
+                    <i class="fas fa-search"></i>
+                    <span>No items found matching "${searchTerm}"</span>
+                </td>
+            `;
+            tableBody.appendChild(noResultsRow);
+        }
+    } else if (noResults) {
+        noResults.remove();
     }
 }
 
-function showToast(message, type = 'info') {
+// Toast notification system with queue
+let toastQueue = [];
+let isShowingToast = false;
+
+function showToast(message, type = 'info', duration = 5000) {
+    toastQueue.push({ message, type, duration });
+    
+    if (!isShowingToast) {
+        processToastQueue();
+    }
+}
+
+function processToastQueue() {
+    if (toastQueue.length === 0) {
+        isShowingToast = false;
+        return;
+    }
+    
+    isShowingToast = true;
+    const { message, type, duration } = toastQueue.shift();
+    
     const toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) return;
 
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    toast.className = `toast ${type} slide-in`;
     toast.innerHTML = `
-        ${message}
-        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+        <div class="toast-content">
+            <i class="toast-icon fas fa-${getToastIcon(type)}"></i>
+            <span class="toast-message">${message}</span>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="toast-progress"></div>
     `;
 
     toastContainer.appendChild(toast);
 
-    setTimeout(() => {
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // Auto remove
+    const timeout = setTimeout(() => {
+        toast.classList.remove('show');
         toast.classList.add('fade-out');
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
+        setTimeout(() => {
+            toast.remove();
+            processToastQueue();
+        }, 300);
+    }, duration);
+
+    // Pause progress on hover
+    toast.addEventListener('mouseenter', () => {
+        clearTimeout(timeout);
+        toast.querySelector('.toast-progress').style.animationPlayState = 'paused';
+    });
+
+    toast.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.classList.add('fade-out');
+            setTimeout(() => {
+                toast.remove();
+                processToastQueue();
+            }, 300);
+        }, 1000);
+    });
+}
+
+function getToastIcon(type) {
+    const icons = {
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+    return icons[type] || 'info-circle';
 }
 
 window.showToast = showToast;
-
-
 
 // Settings Modal Functions
 function openSettingsModal() {
     const modal = document.getElementById('settingsModal');
     if (modal) {
         modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Animate modal entrance
+        const modalContainer = modal.querySelector('.modal-container');
+        modalContainer.classList.add('zoom-in');
     }
 }
 
 function closeSettingsModal() {
     const modal = document.getElementById('settingsModal');
     if (modal) {
+        const modalContainer = modal.querySelector('.modal-container');
+        modalContainer.classList.add('zoom-out');
+        
+        setTimeout(() => {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }, 300);
+    }
+}
+
+function closeModalWithAnimation(modal) {
+    if (!modal) return;
+    
+    const modalContainer = modal.querySelector('.modal-container');
+    if (modalContainer) {
+        modalContainer.classList.add('zoom-out');
+        setTimeout(() => {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }, 300);
+    } else {
         modal.classList.remove('active');
+        document.body.style.overflow = '';
     }
 }
 
@@ -479,6 +1087,9 @@ function applyThemeColor() {
     const secondaryColor = document.getElementById('secondaryColor').value;
     const accentColor = document.getElementById('accentColor').value;
     
+    // Animate theme change
+    document.body.classList.add('theme-changing');
+    
     root.style.setProperty('--primary', primaryColor);
     root.style.setProperty('--secondary', secondaryColor);
     root.style.setProperty('--accent', accentColor);
@@ -488,7 +1099,11 @@ function applyThemeColor() {
     localStorage.setItem('theme-secondary', secondaryColor);
     localStorage.setItem('theme-accent', accentColor);
     
-    showToast('Theme colors applied successfully!', 'success');
+    setTimeout(() => {
+        document.body.classList.remove('theme-changing');
+    }, 500);
+    
+    showToast('Theme colors applied successfully!', 'success', 2000);
 }
 
 function resetThemeToDefault() {
@@ -511,7 +1126,7 @@ function resetThemeToDefault() {
     localStorage.removeItem('theme-secondary');
     localStorage.removeItem('theme-accent');
     
-    showToast('Theme reset to default!', 'info');
+    showToast('Theme reset to default!', 'info', 2000);
 }
 
 function loadSavedTheme() {
@@ -524,6 +1139,15 @@ function loadSavedTheme() {
         if (savedPrimary) root.style.setProperty('--primary', savedPrimary);
         if (savedSecondary) root.style.setProperty('--secondary', savedSecondary);
         if (savedAccent) root.style.setProperty('--accent', savedAccent);
+        
+        // Update color pickers
+        const primaryPicker = document.getElementById('primaryColor');
+        const secondaryPicker = document.getElementById('secondaryColor');
+        const accentPicker = document.getElementById('accentColor');
+        
+        if (primaryPicker && savedPrimary) primaryPicker.value = savedPrimary;
+        if (secondaryPicker && savedSecondary) secondaryPicker.value = savedSecondary;
+        if (accentPicker && savedAccent) accentPicker.value = savedAccent;
     }
 }
 
@@ -557,12 +1181,229 @@ function initializeSettings() {
         resetThemeBtn.addEventListener('click', resetThemeToDefault);
     }
     
+    // Settings tabs
+    const settingsTabs = document.querySelectorAll('.settings-tab');
+    settingsTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            settingsTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            // Here you can add logic to show different settings sections
+        });
+    });
+    
+    // Toggle switches
+    const toggles = document.querySelectorAll('.toggle-switch input');
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', (e) => {
+            const setting = e.target.id;
+            const isEnabled = e.target.checked;
+            localStorage.setItem(setting, isEnabled);
+            showToast(`${setting} ${isEnabled ? 'enabled' : 'disabled'}`, 'info', 1500);
+        });
+        
+        // Load saved state
+        const savedState = localStorage.getItem(toggle.id);
+        if (savedState !== null) {
+            toggle.checked = savedState === 'true';
+        }
+    });
+    
     // Load saved theme on page load
     loadSavedTheme();
 }
 
-// Initialize settings when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    initializePage();
-    initializeSettings();
-});
+// Utility Functions
+function animateButton(button) {
+    button.classList.add('btn-click');
+    setTimeout(() => button.classList.remove('btn-click'), 300);
+}
+
+function showLoader(button) {
+    if (!button) return;
+    const originalText = button.innerHTML;
+    button.setAttribute('data-original-text', originalText);
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    button.disabled = true;
+}
+
+function hideLoader(button) {
+    if (!button) return;
+    const originalText = button.getAttribute('data-original-text');
+    if (originalText) {
+        button.innerHTML = originalText;
+    }
+    button.disabled = false;
+}
+
+function playStartSound() {
+    // You can add actual sound here if desired
+    console.log('Listening started');
+}
+
+function playSuccessSound() {
+    // You can add actual sound here if desired
+    console.log('Success');
+}
+
+function showConfirmationDialog(title, message, onConfirm, onCancel) {
+    const dialog = document.createElement('div');
+    dialog.className = 'confirmation-dialog-overlay';
+    dialog.innerHTML = `
+        <div class="confirmation-dialog glass-card">
+            <div class="dialog-header">
+                <h3>${title}</h3>
+                <button class="dialog-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="dialog-body">
+                <p>${message}</p>
+            </div>
+            <div class="dialog-footer">
+                <button class="btn-secondary" id="dialogCancel">Cancel</button>
+                <button class="btn-primary" id="dialogConfirm">Confirm</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    document.body.style.overflow = 'hidden';
+    
+    dialog.querySelector('#dialogConfirm').addEventListener('click', () => {
+        onConfirm();
+        dialog.remove();
+        document.body.style.overflow = '';
+    });
+    
+    dialog.querySelector('#dialogCancel').addEventListener('click', () => {
+        if (onCancel) onCancel();
+        dialog.remove();
+        document.body.style.overflow = '';
+    });
+    
+    dialog.querySelector('.dialog-close').addEventListener('click', () => {
+        dialog.remove();
+        document.body.style.overflow = '';
+    });
+}
+
+function handleKeyboardShortcuts(e) {
+    // Ctrl/Cmd + K for search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.focus();
+            showToast('Search activated', 'info', 1000);
+        }
+    }
+    
+    // Escape to close modals
+    if (e.key === 'Escape') {
+        const activeModal = document.querySelector('.modal-overlay.active');
+        if (activeModal) {
+            closeModalWithAnimation(activeModal);
+        }
+    }
+    
+    // Ctrl/Cmd + M for microphone
+    if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+        e.preventDefault();
+        toggleListening();
+    }
+}
+
+// Bulk actions
+function bulkDelete() {
+    const selectedIds = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+        .map(cb => cb.closest('tr').dataset.id);
+    
+    if (selectedIds.length === 0) return;
+    
+    showConfirmationDialog(
+        'Delete Items',
+        `Are you sure you want to delete ${selectedIds.length} item(s)?`,
+        async () => {
+            // Implement bulk delete API call
+            showToast(`Deleted ${selectedIds.length} items`, 'success');
+            fetchInventory();
+        }
+    );
+}
+
+function bulkUpdate() {
+    const selectedIds = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+        .map(cb => cb.closest('tr').dataset.id);
+    
+    if (selectedIds.length === 0) return;
+    
+    // Show bulk update modal
+    showBulkUpdateModal(selectedIds);
+}
+
+function showBulkUpdateModal(ids) {
+    // Implement bulk update modal
+    console.log('Bulk update for:', ids);
+}
+
+// Export functionality
+function exportData() {
+    const format = 'csv'; // or 'pdf', 'excel'
+    showToast('Exporting data...', 'info');
+    
+    // Implement export logic
+    setTimeout(() => {
+        showToast('Data exported successfully', 'success');
+    }, 2000);
+}
+
+function refreshData() {
+    const refreshBtn = document.querySelector('[onclick="refreshData()"]');
+    if (refreshBtn) {
+        refreshBtn.classList.add('rotating');
+    }
+    
+    fetchInventory();
+    updateQuickStats();
+    
+    setTimeout(() => {
+        if (refreshBtn) {
+            refreshBtn.classList.remove('rotating');
+        }
+    }, 500);
+    
+    showToast('Data refreshed', 'success', 1500);
+}
+
+function scanBarcode() {
+    showToast('Barcode scanner activated', 'info');
+    // Implement barcode scanning logic
+}
+
+function generateReport() {
+    showToast('Generating report...', 'info');
+    // Implement report generation
+}
+
+function showItemDetails(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (!row) return;
+    
+    // Show detailed item modal
+    console.log('Showing details for item:', id);
+}
+
+// Make functions globally available
+window.openSettingsModal = openSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
+window.applyThemeColor = applyThemeColor;
+window.resetThemeToDefault = resetThemeToDefault;
+window.exportData = exportData;
+window.refreshData = refreshData;
+window.scanBarcode = scanBarcode;
+window.generateReport = generateReport;
+window.showItemDetails = showItemDetails;
+window.bulkDelete = bulkDelete;
+window.bulkUpdate = bulkUpdate;
+window.suggestCommand = function(cmd) {
+    document.getElementById('recognizedText').textContent = cmd;
+    parseCommand(cmd);
+};

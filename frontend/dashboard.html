@@ -3,195 +3,500 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Voice Inventory</title>
+    <title>Dashboard - Voice Inventory Pro</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <!-- Animated Background -->
     <div class="gradient-bg">
+        <div class="floating-particle"></div>
         <div class="floating-particle"></div>
         <div class="floating-particle"></div>
         <div class="floating-particle"></div>
     </div>
 
     <div class="container">
-        <!-- Navbar -->
-        <nav class="glass-nav">
-            <div class="logo">
-             <svg class="navbar-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="45" fill="url(#gradient)"/>
-                    <path d="M35 50 L45 60 L65 40" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                    <defs>
-                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#6366f1"/>
-                            <stop offset="100%" style="stop-color:#8b5cf6"/>
-                        </linearGradient>
-                    </defs>
-                </svg>
+        <!-- Premium Navbar -->
+        <nav class="premium-nav glass-nav">
+            <div class="nav-left">
+                <div class="logo-wrapper">
+                    <svg class="navbar-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="45" fill="url(#gradient)"/>
+                        <path d="M35 50 L45 60 L65 40" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#6366f1"/>
+                                <stop offset="100%" style="stop-color:#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span class="logo-text">Voice<span class="text-gradient">Inventory</span></span>
+                </div>
+                <div class="nav-links">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-microphone"></i>
+                        <span>Voice Input</span>
+                    </a>
+                    <a href="dashboard.html" class="nav-link active">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
             </div>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link">Voice Input</a>
-                <a href="dashboard.html" class="nav-link active">Dashboard</a>
+            <div class="nav-right">
+                <div class="notification-badge">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" id="notificationCount">3</span>
+                </div>
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=6366f1&color=fff" alt="User" class="user-avatar">
+                </div>
             </div>
         </nav>
 
         <!-- Dashboard Content -->
         <div class="dashboard-container fade-in">
-            <!-- Sidebar -->
-            <div class="sidebar glass-card">
+            <!-- Enhanced Sidebar -->
+            <div class="sidebar premium-glass">
                 <div class="sidebar-header">
-                    <img src="../assets/mic-icon.png" alt="Logo" class="sidebar-logo">
-                    <h3>Menu</h3>
+                    <div class="user-welcome">
+                        <h4>Welcome back,</h4>
+                        <h3>Admin User</h3>
+                    </div>
                 </div>
                 <ul class="sidebar-menu">
                     <li class="menu-item active">
-                        <span class="menu-icon">📊</span>
+                        <i class="fas fa-th-large menu-icon"></i>
                         <span>Overview</span>
+                        <span class="menu-badge">12</span>
                     </li>
-         i>
-                              <span>Reports</span>
+                    <li class="menu-item">
+                        <i class="fas fa-chart-line menu-icon"></i>
+                        <span>Analytics</span>
+                    </li>
+                    <li class="menu-item">
+                        <i class="fas fa-file-alt menu-icon"></i>
+                        <span>Reports</span>
+                        <span class="menu-badge new">New</span>
                     </li>
                     <li class="menu-item" onclick="openSettingsModal()">
-                        <span class="menu-icon">⚙️</span>
+                        <i class="fas fa-cog menu-icon"></i>
                         <span>Settings</span>
                     </li>
                 </ul>
+                <div class="sidebar-footer">
+                    <div class="storage-info">
+                        <i class="fas fa-database"></i>
+                        <div class="storage-details">
+                            <span>Storage Used</span>
+                            <div class="progress-bar">
+                                <div class="progress" style="width: 45%"></div>
+                            </div>
+                            <small>45% used</small>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Main Content -->
+            <!-- Main Content Area -->
             <div class="main-content">
-                <!-- Stats Cards -->
+                <!-- Header with Date -->
+                <div class="content-header">
+                    <div>
+                        <h1 class="page-title">Inventory Dashboard</h1>
+                        <p class="page-subtitle" id="currentDateTime"></p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-outline" onclick="exportData()">
+                            <i class="fas fa-download"></i>
+                            Export
+                        </button>
+                        <button class="btn-outline" onclick="refreshData()">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Premium Stats Cards -->
                 <div class="stats-grid">
-                    <div class="stat-card glass-card glow-card">
-                        <div class="stat-icon">📦</div>
-                        <div class="stat-info">
+                    <div class="stat-card premium-stat">
+                        <div class="stat-icon-wrapper primary">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="stat-content">
                             <span class="stat-label">Total Items</span>
-                            <span class="stat-value" id="totalItems">0</span>
+                            <div class="stat-value-wrapper">
+                                <span class="stat-value" id="totalItems">0</span>
+                                <span class="stat-trend positive">
+                                    <i class="fas fa-arrow-up"></i> +12%
+                                </span>
+                            </div>
+                            <span class="stat-subtitle">vs last month</span>
                         </div>
                     </div>
-                    <div class="stat-card glass-card glow-card">
-                        <div class="stat-icon">⚠️</div>
-                        <div class="stat-info">
-                            <span class="stat-label">Low Stock</span>
-                            <span class="stat-value" id="lowStock">0</span>
+
+                    <div class="stat-card premium-stat">
+                        <div class="stat-icon-wrapper warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Low Stock Alert</span>
+                            <div class="stat-value-wrapper">
+                                <span class="stat-value" id="lowStock">0</span>
+                                <span class="stat-trend negative">
+                                    <i class="fas fa-exclamation-circle"></i> Need attention
+                                </span>
+                            </div>
+                            <span class="stat-subtitle">Items below threshold</span>
                         </div>
                     </div>
-                    <div class="stat-card glass-card glow-card">
-                        <div class="stat-icon">🔄</div>
-                        <div class="stat-info">
+
+                    <div class="stat-card premium-stat">
+                        <div class="stat-icon-wrapper success">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
                             <span class="stat-label">Recent Updates</span>
-                            <span class="stat-value" id="recentUpdates">0</span>
+                            <div class="stat-value-wrapper">
+                                <span class="stat-value" id="recentUpdates">0</span>
+                                <span class="stat-trend">
+                                    <i class="fas fa-check-circle"></i> Today
+                                </span>
+                            </div>
+                            <span class="stat-subtitle">Last 24 hours</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Inventory Table Section -->
-                <div class="table-section glass-card">
+                <!-- Quick Actions Row -->
+                <div class="quick-actions">
+                    <button class="quick-action-btn" onclick="scanBarcode()">
+                        <i class="fas fa-qrcode"></i>
+                        <span>Scan Barcode</span>
+                    </button>
+                    <button class="quick-action-btn" onclick="bulkUpdate()">
+                        <i class="fas fa-layer-group"></i>
+                        <span>Bulk Update</span>
+                    </button>
+                    <button class="quick-action-btn" onclick="generateReport()">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Generate Report</span>
+                    </button>
+                </div>
+
+                <!-- Enhanced Inventory Table Section -->
+                <div class="table-section premium-table">
                     <div class="table-header">
-                        <h2>Inventory Items</h2>
+                        <div class="table-title">
+                            <h2><i class="fas fa-clipboard-list"></i> Inventory Items</h2>
+                            <div class="table-filters">
+                                <button class="filter-chip active">All Items</button>
+                                <button class="filter-chip">In Stock</button>
+                                <button class="filter-chip">Low Stock</button>
+                                <button class="filter-chip">Out of Stock</button>
+                            </div>
+                        </div>
                         <div class="table-actions">
-                            <input type="text" placeholder="Search items..." class="search-input" id="searchInput">
-                            <button class="btn-primary glow-button" id="addItemBtn">
+                            <div class="search-wrapper">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" placeholder="Search by name or ID..." class="search-input" id="searchInput">
+                                <div class="search-shortcut">⌘K</div>
+                            </div>
+                            <button class="btn-primary premium-btn" id="addItemBtn">
+                                <i class="fas fa-plus"></i>
                                 Add Item
-                                <span class="btn-ripple"></span>
                             </button>
-                            <button class="btn-secondary glow-button" id="clearAllBtn">
+                            <button class="btn-secondary premium-btn" id="clearAllBtn">
+                                <i class="fas fa-trash"></i>
                                 Clear All
-                                <span class="btn-ripple"></span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Inventory Table -->
+                    <!-- Premium Inventory Table -->
                     <div class="table-container">
-                        <table class="inventory-table" id="inventoryTable">
+                        <table class="inventory-table premium-table-style" id="inventoryTable">
                             <thead>
                                 <tr>
-                                    <th>Item Name</th>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox" class="select-all-checkbox">
+                                    </th>
+                                    <th>Item Details</th>
                                     <th>Quantity</th>
                                     <th>Status</th>
+                                    <th>Last Updated</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="tableBody">
                                 <!-- Dynamically populated -->
+                                <!-- Sample row for demonstration -->
+                                <tr class="premium-row">
+                                    <td><input type="checkbox" class="row-checkbox"></td>
+                                    <td>
+                                        <div class="item-details">
+                                            <div class="item-icon">
+                                                <i class="fas fa-box"></i>
+                                            </div>
+                                            <div class="item-info">
+                                                <span class="item-name">Wireless Headphones</span>
+                                                <span class="item-sku">SKU: WH-001</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="quantity-badge">45 units</span></td>
+                                    <td><span class="status-badge success">In Stock</span></td>
+                                    <td><span class="date-badge">2 min ago</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="action-btn edit" onclick="editItem(this)">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="action-btn delete" onclick="deleteItem(this)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            <button class="action-btn more" onclick="moreOptions(this)">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <!-- Table Footer with Pagination -->
+                    <div class="table-footer">
+                        <div class="pagination-info">
+                            Showing <span class="highlight">1-10</span> of <span class="highlight">50</span> items
+                        </div>
+                        <div class="pagination">
+                            <button class="page-btn"><i class="fas fa-chevron-left"></i></button>
+                            <button class="page-btn active">1</button>
+                            <button class="page-btn">2</button>
+                            <button class="page-btn">3</button>
+                            <button class="page-btn">4</button>
+                            <span>...</span>
+                            <button class="page-btn">10</button>
+                            <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Add Item Modal -->
+    <!-- Enhanced Add Item Modal -->
     <div class="modal-overlay" id="modalOverlay">
-        <div class="modal-container glass-card">
+        <div class="modal-container premium-modal">
             <div class="modal-header">
-                <h3>Add New Item</h3>
-                <button class="close-modal" id="closeModal">&times;</button>
+                <div class="modal-title">
+                    <i class="fas fa-plus-circle modal-icon"></i>
+                    <h3>Add New Inventory Item</h3>
+                </div>
+                <button class="close-modal" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="addItemForm">
                     <div class="form-group">
-                        <label for="itemName">Item Name</label>
-                        <input type="text" id="itemName" class="form-input" required>
+                        <label for="itemName">
+                            <i class="fas fa-tag"></i>
+                            Item Name
+                        </label>
+                        <input type="text" id="itemName" class="form-input premium-input" 
+                               placeholder="e.g., Wireless Headphones" required>
                     </div>
                     <div class="form-group">
-                        <label for="itemQuantity">Quantity</label>
-                        <input type="number" id="itemQuantity" class="form-input" min="0" required>
+                        <label for="itemQuantity">
+                            <i class="fas fa-cubes"></i>
+                            Quantity
+                        </label>
+                        <input type="number" id="itemQuantity" class="form-input premium-input" 
+                               min="0" placeholder="Enter quantity" required>
                     </div>
-                    <button type="submit" class="btn-primary glow-button full-width">
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="itemCategory">
+                                <i class="fas fa-folder"></i>
+                                Category
+                            </label>
+                            <select id="itemCategory" class="form-input premium-input">
+                                <option>Electronics</option>
+                                <option>Furniture</option>
+                                <option>Clothing</option>
+                                <option>Food</option>
+                            </select>
+                        </div>
+                        <div class="form-group half">
+                            <label for="itemUnit">
+                                <i class="fas fa-weight-hanging"></i>
+                                Unit
+                            </label>
+                            <select id="itemUnit" class="form-input premium-input">
+                                <option>Pieces</option>
+                                <option>Kg</option>
+                                <option>Liter</option>
+                                <option>Box</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary premium-btn full-width">
+                        <i class="fas fa-check-circle"></i>
                         Add to Inventory
-                        <span class="btn-ripple"></span>
                     </button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <script src="api.js"></script>
-    <script src="script.js"></script>
-</body>
-    
-    <!-- Settings Modal -->
+    <!-- Enhanced Settings Modal -->
     <div class="modal-overlay" id="settingsModal">
-        <div class="modal-container glass-card">
+        <div class="modal-container premium-modal settings-modal">
             <div class="modal-header">
-                <h3>Settings</h3>
-                <button class="close-modal" id="closeSettingsModal">&times;</button>
+                <div class="modal-title">
+                    <i class="fas fa-cog modal-icon"></i>
+                    <h3>Settings</h3>
+                </div>
+                <button class="close-modal" id="closeSettingsModal">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Theme Color</label>
-                    <div class="color-picker">
-                        <input type="color" id="primaryColor" value="#6366f1" class="color-input">
-                        <input type="color" id="secondaryColor" value="#8b5cf6" class="color-input">
-                        <input type="color" id="accentColor" value="#ec4899" class="color-input">
+                <div class="settings-tabs">
+                    <button class="settings-tab active">General</button>
+                    <button class="settings-tab">Appearance</button>
+                    <button class="settings-tab">Notifications</button>
+                    <button class="settings-tab">Backup</button>
+                </div>
+                
+                <div class="settings-content">
+                    <!-- Theme Settings -->
+                    <div class="settings-section">
+                        <h4>Theme Customization</h4>
+                        <div class="color-picker-grid">
+                            <div class="color-item">
+                                <label>Primary</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="primaryColor" value="#6366f1">
+                                </div>
+                            </div>
+                            <div class="color-item">
+                                <label>Secondary</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="secondaryColor" value="#8b5cf6">
+                                </div>
+                            </div>
+                            <div class="color-item">
+                                <label>Accent</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="accentColor" value="#ec4899">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="theme-actions">
+                            <button class="btn-primary premium-btn small" id="applyThemeBtn">
+                                <i class="fas fa-check"></i>
+                                Apply Theme
+                            </button>
+                            <button class="btn-secondary premium-btn small" id="resetThemeBtn">
+                                <i class="fas fa-undo"></i>
+                                Reset
+                            </button>
+                        </div>
                     </div>
-                    <button class="btn-primary glow-button" id="applyThemeBtn" style="margin-top: 1rem;">Apply Theme</button>
-                    <button class="btn-secondary glow-button" id="resetThemeBtn" style="margin-top: 0.5rem;">Reset to Default</button>
-                </div>
-                <div class="form-group">
-                    <label>Notifications</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="notificationsToggle" checked>
-                        <span class="toggle-slider"></span>
-                        <span>Enable notifications</span>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>Voice Feedback</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="voiceFeedbackToggle" checked>
-                        <span class="toggle-slider"></span>
-                        <span>Enable voice feedback</span>
-                    </label>
+
+                    <!-- Notification Settings -->
+                    <div class="settings-section">
+                        <h4>Preferences</h4>
+                        <div class="toggle-list">
+                            <label class="toggle-item">
+                                <div class="toggle-info">
+                                    <i class="fas fa-bell"></i>
+                                    <span>Enable notifications</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notificationsToggle" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </label>
+                            <label class="toggle-item">
+                                <div class="toggle-info">
+                                    <i class="fas fa-microphone"></i>
+                                    <span>Voice feedback</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="voiceFeedbackToggle" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </label>
+                            <label class="toggle-item">
+                                <div class="toggle-info">
+                                    <i class="fas fa-moon"></i>
+                                    <span>Dark mode</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="darkModeToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Enhanced Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Quick Action Menu -->
+    <div class="quick-action-fab">
+        <button class="fab-button" onclick="openQuickMenu()">
+            <i class="fas fa-plus"></i>
+        </button>
+        <div class="fab-menu">
+            <button class="fab-item" onclick="quickAdd()">
+                <i class="fas fa-box"></i>
+                <span>Quick Add</span>
+            </button>
+            <button class="fab-item" onclick="quickScan()">
+                <i class="fas fa-camera"></i>
+                <span>Scan</span>
+            </button>
+            <button class="fab-item" onclick="quickSearch()">
+                <i class="fas fa-search"></i>
+                <span>Search</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Keep your existing script tags - functionality preserved -->
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+    
+    <!-- Add this small script for dynamic date -->
+    <script>
+        // Update date time - This won't affect your existing functionality
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit', 
+                minute: '2-digit'
+            };
+            document.getElementById('currentDateTime').textContent = 
+                now.toLocaleDateString('en-US', options);
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+    </script>
+</body>
 </html>
